@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './LandingPage.css';
 
 function LandingPage() {
-  const [isSignupOpen, setIsSignupOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleSignupClick = () => {
-    setIsSignupOpen(true);
-    // TODO: Navigate to signup page or open signup modal
-    console.log('Signup clicked');
+    navigate('/signup');
+  };
+
+  const handleLoginClick = () => {
+    navigate('/login');
   };
 
   return (
@@ -15,12 +17,16 @@ function LandingPage() {
       {/* Navigation */}
       <nav className="navbar">
         <div className="nav-container">
-          <div className="logo">
+          <button
+            type="button"
+            className="logo logo-button"
+            onClick={() => navigate('/')}
+          >
             <span className="logo-icon">💬</span>
-            <span className="logo-text">ChatApp</span>
-          </div>
+            <span className="logo-text">Yappers Zone</span>
+          </button>
           <div className="nav-buttons">
-            <button className="btn-secondary" onClick={() => console.log('Login clicked')}>
+            <button className="btn-secondary" onClick={handleLoginClick}>
               Login
             </button>
             <button className="btn-primary" onClick={handleSignupClick}>
@@ -35,14 +41,15 @@ function LandingPage() {
         <div className="hero-container">
           <div className="hero-content">
             <h1 className="hero-title">
-              Connect with <span className="gradient-text">Everyone</span>
+              Welcome to
+              {' '}
+              <span className="gradient-text">Yappers Zone</span>
               <br />
-              Instantly, Securely
+              Your Space to Talk About Anything
             </h1>
             <p className="hero-description">
-              Experience real-time messaging like never before. Send messages, share files, 
-              and stay connected with your friends and family - all in one beautiful, 
-              secure platform.
+              A fun, fast chat space where you can yap with friends, share moments,
+              and hang out with your favorite people – all in one colorful, secure place.
             </p>
             <div className="hero-buttons">
               <button className="btn-hero-primary" onClick={handleSignupClick}>
@@ -96,7 +103,7 @@ function LandingPage() {
       {/* Features Section */}
       <section className="features">
         <div className="features-container">
-          <h2 className="section-title">Why Choose ChatApp?</h2>
+          <h2 className="section-title">Why Choose Yappers Zone?</h2>
           <p className="section-subtitle">
             Everything you need for seamless communication
           </p>
@@ -158,7 +165,7 @@ function LandingPage() {
         <div className="cta-container">
           <h2 className="cta-title">Ready to Get Started?</h2>
           <p className="cta-description">
-            Join thousands of users who are already connecting on ChatApp
+            Join thousands of people already yapping on Yappers Zone.
           </p>
           <button className="btn-cta" onClick={handleSignupClick}>
             Sign Up Now - It's Free
@@ -172,7 +179,7 @@ function LandingPage() {
           <div className="footer-content">
             <div className="footer-brand">
               <span className="logo-icon">💬</span>
-              <span className="logo-text">ChatApp</span>
+              <span className="logo-text">Yappers Zone</span>
             </div>
             <div className="footer-links">
               <a href="#features">Features</a>
@@ -182,7 +189,7 @@ function LandingPage() {
             </div>
           </div>
           <div className="footer-bottom">
-            <p>&copy; 2024 ChatApp. All rights reserved.</p>
+            <p>&copy; 2024 Yappers Zone. All rights reserved.</p>
           </div>
         </div>
       </footer>

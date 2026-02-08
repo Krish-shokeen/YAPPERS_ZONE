@@ -34,6 +34,16 @@
   color: #2563eb;
 }
 
+.logo-button {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+
 .logo-icon {
   font-size: 2rem;
 }
@@ -86,7 +96,7 @@
 
 /* Hero Section */
 .hero {
-  padding: 4rem 2rem;
+  padding: 4rem 2.5rem;
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -298,7 +308,7 @@
 
 /* Features Section */
 .features {
-  padding: 6rem 2rem;
+  padding: 5rem 2.5rem;
   background: white;
 }
 
@@ -364,7 +374,7 @@
 
 /* CTA Section */
 .cta {
-  padding: 6rem 2rem;
+  padding: 5rem 2.5rem;
   background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
   color: white;
 }
@@ -456,11 +466,159 @@
   font-size: 0.875rem;
 }
 
+/* Auth Pages (Login / Signup) */
+.auth-page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.15);
+  padding: 2.5rem 2.25rem;
+}
+
+.auth-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #0f172a;
+}
+
+.auth-subtitle {
+  color: #64748b;
+  margin-bottom: 2rem;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #334155;
+}
+
+.form-group input {
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.form-group input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+  background-color: #eff6ff;
+}
+
+.auth-submit {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.auth-footer-text {
+  margin-top: 1.5rem;
+  font-size: 0.9rem;
+  color: #64748b;
+  text-align: center;
+}
+
+.auth-link {
+  color: #2563eb;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.auth-link:hover {
+  text-decoration: underline;
+}
+
+.auth-error {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 0.9rem;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.auth-divider-line {
+  flex: 1;
+  height: 1px;
+  background: #e2e8f0;
+}
+
+.auth-divider-text {
+  white-space: nowrap;
+}
+
+.btn-google {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #0f172a;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+}
+
+.btn-google:hover {
+  background: #f8fafc;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+  transform: translateY(-1px);
+}
+
 /* Responsive Design */
 @media (max-width: 968px) {
   .hero-container {
     grid-template-columns: 1fr;
     gap: 3rem;
+  }
+
+  .hero {
+    padding: 3rem 1.75rem;
   }
 
   .hero-title {
@@ -497,7 +655,7 @@
   }
 
   .hero {
-    padding: 2rem 1rem;
+    padding: 2.5rem 1.25rem;
   }
 
   .hero-title {
@@ -523,7 +681,7 @@
   }
 
   .features {
-    padding: 4rem 1rem;
+    padding: 3.5rem 1.25rem;
   }
 
   .section-title {
@@ -531,7 +689,7 @@
   }
 
   .cta {
-    padding: 4rem 1rem;
+    padding: 3.5rem 1.25rem;
   }
 
   .cta-title {
@@ -547,6 +705,15 @@
   .footer-links {
     flex-wrap: wrap;
     justify-content: center;
+  }
+
+  .auth-container {
+    padding: 2.5rem 1.25rem;
+  }
+
+  .auth-card {
+    padding: 2rem 1.75rem;
+    border-radius: 20px;
   }
 }
 
