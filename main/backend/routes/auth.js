@@ -59,14 +59,18 @@ router.post('/register', async (req, res) => {
         displayName: name || '',
         photoURL: picture || '',
         provider: provider,
+        createdAt: new Date(),
         lastLoginAt: new Date()
       });
       
       await user.save();
       console.log('New user created in MongoDB:', user._id);
     } else {
-      // Update last login time
+      // Update last login time and ensure createdAt exists
       user.lastLoginAt = new Date();
+      if (!user.createdAt) {
+        user.createdAt = new Date();
+      }
       await user.save();
       console.log('User login updated in MongoDB:', user._id);
     }
@@ -74,7 +78,7 @@ router.post('/register', async (req, res) => {
     // Generate JWT token (optional)
     const jwtToken = generateJWT(user);
     
-    res.status(200).json({
+    const responseData = {
       message: 'User authenticated successfully',
       user: {
         id: user._id,
@@ -82,10 +86,21 @@ router.post('/register', async (req, res) => {
         email: user.email,
         displayName: user.displayName,
         photoURL: user.photoURL,
-        provider: user.provider
+        provider: user.provider,
+        createdAt: user.createdAt,
+        lastLoginAt: user.lastLoginAt
       },
       token: jwtToken
-    });
+    };
+    
+    console.log('=== SENDING RESPONSE ===');
+    console.log('User ID:', user._id);
+    console.log('Created At:', user.createdAt);
+    console.log('Last Login At:', user.lastLoginAt);
+    console.log('Response user object:', JSON.stringify(responseData.user, null, 2));
+    console.log('========================');
+    
+    res.status(200).json(responseData);
     
   } catch (error) {
     console.error('Registration/Login error:', error);
@@ -146,7 +161,9 @@ router.put('/profile', verifyToken, async (req, res) => {
         email: user.email,
         displayName: user.displayName,
         photoURL: user.photoURL,
-        provider: user.provider
+        provider: user.provider,
+        createdAt: user.createdAt,
+        lastLoginAt: user.lastLoginAt
       }
     });
   } catch (error) {

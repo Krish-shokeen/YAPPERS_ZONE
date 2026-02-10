@@ -1,10 +1,18 @@
+import { useEffect } from 'react';
 import './LandingPage.css';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext.jsx';
+import ProfileDropdown from './ProfileDropdown';
 
 function DashboardPage() {
-  const { user, loading, logout } = useAuth();
+  const { user, userProfile, loading } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/login');
+    }
+  }, [loading, user, navigate]);
 
   if (loading) {
     return (
@@ -19,14 +27,10 @@ function DashboardPage() {
   }
 
   if (!user) {
-    navigate('/login');
     return null;
   }
 
-  const handleLogout = async () => {
-    await logout();
-    navigate('/login');
-  };
+  const displayName = userProfile?.displayName || user.displayName || user.email?.split('@')[0];
 
   return (
     <div className="landing-page">
@@ -41,9 +45,7 @@ function DashboardPage() {
             <span className="logo-text">Yappers Zone</span>
           </button>
           <div className="nav-buttons">
-            <button className="btn-secondary" onClick={handleLogout}>
-              Log Out
-            </button>
+            <ProfileDropdown />
           </div>
         </div>
       </nav>
@@ -55,7 +57,7 @@ function DashboardPage() {
               Welcome back,
               {' '}
               <span className="gradient-text">
-                {user.displayName || user.email}
+                {displayName}
               </span>
             </h1>
             <p className="hero-description">

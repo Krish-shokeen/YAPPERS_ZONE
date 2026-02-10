@@ -17,9 +17,8 @@
 }
 
 .nav-container {
-  max-width: 100%;
-  width: 100%;
-  margin: 0;
+  max-width: 1200px;
+  margin: 0 auto;
   padding: 0 2rem;
   display: flex;
   justify-content: space-between;
@@ -718,66 +717,3 @@
   }
 }
 
-
-
-/* Forgot Password Styles */
-.form-label-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-}
-
-.forgot-password-link {
-  font-size: 0.875rem;
-  color: #2563eb;
-  text-decoration: none;
-  font-weight: 600;
-  transition: color 0.2s ease;
-}
-
-.forgot-password-link:hover {
-  color: #1d4ed8;
-  text-decoration: underline;
-}
-
-.auth-success {
-  margin-bottom: 1.25rem;
-  padding: 1rem 1.25rem;
-  border-radius: 12px;
-  background: #d1fae5;
-  color: #065f46;
-  font-size: 0.925rem;
-  border: 1px solid #6ee7b7;
-  animation: slideDown 0.4s ease;
-}
-
-.auth-success p {
-  margin: 0;
-  line-height: 1.6;
-}
-
-.auth-footer-links {
-  margin-top: 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  font-size: 0.95rem;
-}
-
-.auth-divider-dot {
-  color: #cbd5e1;
-  font-weight: 700;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
