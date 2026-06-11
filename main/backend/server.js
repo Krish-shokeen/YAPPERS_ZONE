@@ -1,8 +1,11 @@
+import { createServer } from 'http';
 import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
+import chatAuthRouter from './routes/chat-auth.js';
+import { initSocket } from './socket/index.js';
 
 dotenv.config();
 
@@ -32,6 +35,7 @@ connectDB();
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/chat', chatAuthRouter);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -61,7 +65,13 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Something went wrong!' });
 });
 
-app.listen(PORT, () => {
+// Create HTTP server and attach Socket.io
+// We use createServer(app) instead of app.listen() because Socket.io needs
+// access to the raw HTTP server to handle WebSocket upgrade requests.
+const httpServer = createServer(app);
+initSocket(httpServer);
+
+httpServer.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });

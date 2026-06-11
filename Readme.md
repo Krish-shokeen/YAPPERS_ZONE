@@ -1,150 +1,115 @@
 # Yappers Zone
 
-A full-stack web application with Firebase authentication and MongoDB storage.
+A full-stack real-time chat application with the **Cosmic Canvas** UI — conversations visualized as floating orbital nodes on an immersive dark canvas.
 
-## 🚀 Features
+## Tech Stack
+
+**Frontend:** React 19, Vite 7, React Router v7, Firebase Client SDK, Socket.io-client, Framer Motion
+
+**Backend:** Node.js, Express 5, Socket.io, MongoDB (Mongoose), Firebase Admin SDK, Redis (ioredis), JWT
+
+## Features
 
 - Firebase Authentication (Google & Email)
-- Dual storage system (Firebase + MongoDB)
-- JWT token-based API security
-- React frontend with Vite
-- Express.js backend
-- User profile management
+- Real-time 1-on-1 Direct Messaging via Socket.io
+- Group Channels with presence and typing indicators
+- Message delivery status (sent / delivered / read)
+- Media and file sharing
+- End-to-end encrypted DMs (TweetNaCl)
+- Message search and smart filtering
+- Voice and video calls (WebRTC)
+- Cosmic Canvas UI — spatial, physics-driven conversation nodes
+- System-aware dark mode with Nebula themes
 
-## 📋 Prerequisites
+## Prerequisites
 
-- Node.js (v16 or higher)
+- Node.js v18+
 - MongoDB Atlas account
 - Firebase project with authentication enabled
-- npm or yarn
+- Redis (local or hosted via Upstash)
 
-## 🛠️ Installation
+## Setup
 
-### 1. Clone the repository
-
-```bash
-git clone <your-repo-url>
-cd YAPPERS_ZONE
-```
-
-### 2. Backend Setup
+### Backend
 
 ```bash
 cd main/backend
 npm install
-```
-
-Create a `.env` file from the example:
-```bash
 cp .env.example .env
-```
-
-Edit `.env` and add your credentials:
-- MongoDB connection string
-- Firebase service account credentials
-- JWT secret key
-
-Place your Firebase service account key file as `serviceAccountKey.json` in the backend folder.
-
-### 3. Frontend Setup
-
-```bash
-cd main/frontend
-npm install
-```
-
-Create a `.env` file:
-```bash
-cp .env.example .env
-```
-
-Edit `.env` and set your backend API URL (default: `http://localhost:5000/api`).
-
-## 🔐 Environment Variables
-
-### Backend (.env)
-
-See `main/backend/.env.example` for all required variables:
-- `MONGODB_URI` - Your MongoDB connection string
-- `FIREBASE_*` - Firebase service account credentials
-- `JWT_SECRET` - Secret key for JWT tokens
-- `CORS_ORIGIN` - Frontend URL for CORS
-
-### Frontend (.env)
-
-- `VITE_API_BASE_URL` - Backend API URL
-
-## 🚦 Running the Application
-
-### Start Backend Server
-
-```bash
-cd main/backend
+# Fill in .env with your credentials
 npm start
 ```
 
-Server will run on `http://localhost:5000`
+Server runs on `http://localhost:5000`
 
-### Start Frontend Development Server
+### Frontend
 
 ```bash
 cd main/frontend
+npm install
+cp .env.example .env
+# Set VITE_API_BASE_URL=http://localhost:5000/api
 npm run dev
 ```
 
-Frontend will run on `http://localhost:5173`
+Frontend runs on `http://localhost:5173`
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 YAPPERS_ZONE/
 ├── main/
 │   ├── backend/
-│   │   ├── config/          # Configuration files
-│   │   ├── models/          # MongoDB models
-│   │   ├── routes/          # API routes
-│   │   ├── server.js        # Express server
-│   │   └── .env.example     # Environment template
+│   │   ├── config/           # Firebase Admin SDK init
+│   │   ├── models/           # MongoDB User model
+│   │   ├── routes/           # auth.js, chat-auth.js, channels.js, etc.
+│   │   ├── services/         # message.service.js, presence.service.js, etc.
+│   │   ├── socket/           # Socket.io server + event handlers
+│   │   ├── chat-errors.js    # Typed error class
+│   │   └── server.js         # Express + HTTP server + Socket.io bootstrap
 │   └── frontend/
 │       ├── src/
-│       │   ├── components/  # React components
-│       │   ├── AuthContext.jsx
-│       │   └── firebaseClient.js
-│       └── .env.example     # Environment template
-└── README.md
+│       │   ├── components/
+│       │   │   ├── chat/     # Legacy chat components
+│       │   │   └── canvas/   # Cosmic Canvas UI components
+│       │   ├── hooks/        # useChatSocket, usePresence, useTyping
+│       │   ├── services/     # encryption.js (TweetNaCl)
+│       │   ├── styles/       # cosmic-theme.css (Nebula themes)
+│       │   └── App.jsx
+│       └── vite.config.js
+└── .kiro/specs/yappers-zone-chat/   # Spec: requirements, design, tasks
 ```
 
-## 🔒 Security Notes
+## API Endpoints
 
-- Never commit `.env` files
-- Never commit `serviceAccountKey.json`
-- Keep your JWT secret secure
-- Use strong passwords for MongoDB
-- Rotate credentials regularly
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/auth/register` | Register / login via Firebase |
+| GET | `/api/auth/profile` | Get user profile |
+| PUT | `/api/auth/profile` | Update user profile |
+| POST | `/api/chat/token` | Exchange Firebase token for Chat JWT |
+| POST | `/api/channels` | Create a channel |
+| GET | `/api/channels` | List user's channels |
+| POST | `/api/media/upload` | Upload a file |
+| GET | `/api/media/:id/url` | Get a fresh signed URL |
+| GET | `/api/search/messages` | Search messages |
+| GET | `/api/health` | Health check |
 
-## 📚 API Endpoints
+## Socket.io Events
 
-### Authentication
-- `POST /api/auth/register` - Register/login user
-- `GET /api/auth/profile` - Get user profile
-- `PUT /api/auth/profile` - Update user profile
+See `main/backend/socket/` for all event handlers. Key events:
 
-### Configuration
-- `GET /api/config/firebase` - Get Firebase client config
-- `GET /api/health` - Health check
+- `dm:send` / `dm:receive` — direct messages
+- `channel:join` / `channel:send` / `channel:message` — group channels
+- `presence:update` — online/offline status
+- `typing:start` / `typing:stop` — typing indicators
+- `status:read` / `status:update` — delivery receipts
+- `call:invite` / `call:accept` / `call:end` — WebRTC signaling
 
-## 🤝 Contributing
+## Security
 
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Open a Pull Request
+See `SECURITY.md` for credential management and best practices.
 
-## 📄 License
+## License
 
-This project is licensed under the ISC License.
-
-## 📞 Support
-
-For issues and questions, please open an issue in the GitHub repository.
+ISC
