@@ -64,6 +64,16 @@ function DashboardPage() {
               This is your Yappers Zone dashboard. Soon you&apos;ll see your chats,
               friends, and favorite conversations all in one place.
             </p>
+            <div style={{ marginTop: 24 }}>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => navigate('/chat')}
+                style={{ fontSize: 15, padding: '12px 28px', borderRadius: 12 }}
+              >
+                💬 Open Chat
+              </button>
+            </div>
           </div>
         </div>
       </section>

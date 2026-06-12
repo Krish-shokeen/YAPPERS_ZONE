@@ -1,6 +1,9 @@
 import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { registerDmHandlers } from './handlers/dm.handler.js';
+import { registerChannelHandlers } from './handlers/channel.handler.js';
+import { registerPresenceHandlers } from './handlers/presence.handler.js';
+import { registerCallHandlers } from './handlers/call.handler.js';
 
 /**
  * Socket.io server — the real-time layer of YAPPERS_ZONE Chat.
@@ -86,8 +89,11 @@ export function initSocket(httpServer) {
     //   io.to(userId).emit('dm:receive', message)
     socket.join(userId);
 
-    // Register DM event handlers for this socket
+    // Register all event handlers for this socket
+    registerPresenceHandlers(socket, io);
     registerDmHandlers(socket, io);
+    registerChannelHandlers(socket, io);
+    registerCallHandlers(socket, io);
 
     // Handle clean disconnect
     socket.on('disconnect', (reason) => {

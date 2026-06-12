@@ -1,0 +1,96 @@
+.sidebar {
+  width: 64px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 0;
+  background: var(--color-surface-1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-right: 1px solid var(--glass-border);
+  flex-shrink: 0;
+  z-index: 100;
+}
+
+.logo {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 20px;
+  border-radius: 12px;
+  transition: background 0.2s;
+}
+.logo:hover { background: var(--color-surface-1); }
+
+.logoIcon { font-size: 22px; }
+
+.divider {
+  width: 32px;
+  height: 1px;
+  background: var(--glass-border);
+  margin: 8px 0;
+}
+
+.iconBtn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 18px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 4px 0;
+  transition: background 0.2s, transform 0.1s;
+  color: var(--color-text-secondary);
+}
+.iconBtn:hover {
+  background: var(--color-surface-1);
+  transform: scale(1.1);
+}
+
+.spacer { flex: 1; }
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--glass-border);
+  background: var(--color-surface-1);
+  cursor: pointer;
+  position: relative;
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-top: 8px;
+  transition: border-color 0.2s;
+}
+.avatar:hover { border-color: var(--color-accent-primary); }
+.avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.statusDot {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--color-canvas-bg-start);
+}
+.statusDot.online  { background: var(--glow-online); }
+.statusDot.offline { background: var(--glow-offline); }

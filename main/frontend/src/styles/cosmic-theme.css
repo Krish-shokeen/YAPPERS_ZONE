@@ -1,0 +1,185 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   YAPPERS ZONE — Cosmic Canvas Theme System
+   Three Nebula themes as CSS variable sets.
+   Applied by setting data-theme="nebula-blue|supernova|deep-violet" on <html>.
+   Default (no attribute) = Nebula Blue.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Nebula Blue (default) ──────────────────────────────────────────────── */
+:root,
+[data-theme="nebula-blue"] {
+  --color-canvas-bg-start:   #0a0e1a;
+  --color-canvas-bg-end:     #1c1f2e;
+  --color-surface-1:         rgba(255, 255, 255, 0.05);
+  --color-surface-2:         rgba(255, 255, 255, 0.03);
+  --color-accent-primary:    #00e5ff;
+  --color-accent-secondary:  #7b2fff;
+  --color-accent-tertiary:   #ff6ec7;
+  --color-text-primary:      #e8eaf0;
+  --color-text-secondary:    #8892a4;
+  --glass-blur:              12px;
+  --glass-border:            rgba(255, 255, 255, 0.12);
+  --glow-unread:             #00e5ff;
+  --glow-active:             #7b2fff;
+  --glow-online:             #00ff88;
+  --glow-offline:            #4a4a6a;
+}
+
+/* ── Supernova ──────────────────────────────────────────────────────────── */
+[data-theme="supernova"] {
+  --color-canvas-bg-start:   #1a0a00;
+  --color-canvas-bg-end:     #2e1a00;
+  --color-surface-1:         rgba(255, 200, 100, 0.05);
+  --color-surface-2:         rgba(255, 200, 100, 0.03);
+  --color-accent-primary:    #ffaa00;
+  --color-accent-secondary:  #ff6600;
+  --color-accent-tertiary:   #ff3366;
+  --color-text-primary:      #f5e6d0;
+  --color-text-secondary:    #a08060;
+  --glass-blur:              12px;
+  --glass-border:            rgba(255, 170, 0, 0.15);
+  --glow-unread:             #ffcc44;
+  --glow-active:             #ff6600;
+  --glow-online:             #44ff88;
+  --glow-offline:            #5a4030;
+}
+
+/* ── Deep Violet ────────────────────────────────────────────────────────── */
+[data-theme="deep-violet"] {
+  --color-canvas-bg-start:   #0d0a1a;
+  --color-canvas-bg-end:     #1a0d2e;
+  --color-surface-1:         rgba(200, 150, 255, 0.05);
+  --color-surface-2:         rgba(200, 150, 255, 0.03);
+  --color-accent-primary:    #bf5fff;
+  --color-accent-secondary:  #ff6ec7;
+  --color-accent-tertiary:   #00e5ff;
+  --color-text-primary:      #e8d8f8;
+  --color-text-secondary:    #8870a8;
+  --glass-blur:              12px;
+  --glass-border:            rgba(191, 95, 255, 0.15);
+  --glow-unread:             #cc88ff;
+  --glow-active:             #ff6ec7;
+  --glow-online:             #88ffcc;
+  --glow-offline:            #3a2a5a;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Glassmorphism Utility Classes
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.glass-panel {
+  background: var(--color-surface-1);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+}
+
+.glass-panel-sm {
+  background: var(--color-surface-1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+}
+
+.glow-border-unread {
+  box-shadow: 0 0 12px 3px var(--glow-unread),
+              0 0 24px 6px color-mix(in srgb, var(--glow-unread) 30%, transparent);
+  border-color: var(--glow-unread) !important;
+}
+
+.glow-border-active {
+  box-shadow: 0 0 8px 2px var(--glow-active),
+              0 0 16px 4px color-mix(in srgb, var(--glow-active) 30%, transparent);
+  border-color: var(--glow-active) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Canvas Base
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.cosmic-canvas {
+  width: 100vw;
+  height: 100vh;
+  background: radial-gradient(
+    ellipse at 30% 20%,
+    color-mix(in srgb, var(--color-accent-secondary) 8%, transparent),
+    transparent 60%
+  ),
+  radial-gradient(
+    ellipse at 70% 80%,
+    color-mix(in srgb, var(--color-accent-primary) 5%, transparent),
+    transparent 60%
+  ),
+  linear-gradient(160deg, var(--color-canvas-bg-start), var(--color-canvas-bg-end));
+  position: relative;
+  overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Typography
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.cosmic-canvas,
+.cosmic-canvas * {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter',
+               'Helvetica Neue', Arial, sans-serif;
+  box-sizing: border-box;
+}
+
+.text-primary   { color: var(--color-text-primary); }
+.text-secondary { color: var(--color-text-secondary); }
+.text-accent    { color: var(--color-accent-primary); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Scrollbar
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.cosmic-canvas ::-webkit-scrollbar        { width: 4px; }
+.cosmic-canvas ::-webkit-scrollbar-track  { background: transparent; }
+.cosmic-canvas ::-webkit-scrollbar-thumb  {
+  background: var(--glass-border);
+  border-radius: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Chat Page — Cosmic Cursor
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Hide the default cursor everywhere on the chat page */
+body:has(.chat-cursor-dot) * { cursor: none !important; }
+
+.chat-cursor-dot {
+  position: fixed;
+  top: 0; left: 0;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #00e5ff;
+  pointer-events: none;
+  z-index: 2147483647;
+  box-shadow: 0 0 10px 3px rgba(0,229,255,0.75);
+  will-change: transform;
+}
+
+.chat-cursor-ring {
+  position: fixed;
+  top: 0; left: 0;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0,229,255,0.5);
+  pointer-events: none;
+  z-index: 2147483646;
+  will-change: transform;
+  transition: width 0.25s ease, height 0.25s ease, border-color 0.25s ease;
+}
+
+.chat-cursor-dot.chat-cursor-hover {
+  width: 14px; height: 14px;
+  background: #7b2fff;
+  box-shadow: 0 0 18px 6px rgba(123,47,255,0.8);
+}
+.chat-cursor-ring.chat-cursor-hover {
+  width: 56px; height: 56px;
+  border-color: rgba(123,47,255,0.55);
+}

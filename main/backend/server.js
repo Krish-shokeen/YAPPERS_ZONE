@@ -5,7 +5,12 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import chatAuthRouter from './routes/chat-auth.js';
+import channelsRouter from './routes/channels.js';
+import searchRouter from './routes/search.js';
+import mediaRouter from './routes/media.js';
+import encryptionRouter from './routes/encryption.js';
 import { initSocket } from './socket/index.js';
+import { chatAuthMiddleware } from './middleware/chatAuth.js';
 
 dotenv.config();
 
@@ -36,6 +41,12 @@ connectDB();
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/chat', chatAuthRouter);
+
+// Chat REST routes — protected by Chat JWT
+app.use('/api/channels', chatAuthMiddleware, channelsRouter);
+app.use('/api/search', chatAuthMiddleware, searchRouter);
+app.use('/api/media', chatAuthMiddleware, mediaRouter);
+app.use('/api/encryption', chatAuthMiddleware, encryptionRouter);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

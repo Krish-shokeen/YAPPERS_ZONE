@@ -1,0 +1,349 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Auth Pages — Cosmic Canvas Theme
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Cursor ───────────────────────────────────────────────────────────────── */
+.ac-root * { cursor: none !important; }
+
+.ac-cursor-dot {
+  position: fixed;
+  top: 0; left: 0;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #00e5ff;
+  pointer-events: none;
+  z-index: 2147483647;
+  box-shadow: 0 0 10px 3px rgba(0,229,255,0.75);
+  will-change: transform;
+}
+
+.ac-cursor-ring {
+  position: fixed;
+  top: 0; left: 0;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0,229,255,0.5);
+  pointer-events: none;
+  z-index: 2147483646;
+  will-change: transform;
+  transition: width 0.25s ease, height 0.25s ease, border-color 0.25s ease;
+}
+
+.ac-cursor-dot.ac-cursor-hover {
+  width: 14px; height: 14px;
+  background: #7b2fff;
+  box-shadow: 0 0 18px 6px rgba(123,47,255,0.8);
+}
+.ac-cursor-ring.ac-cursor-hover {
+  width: 56px; height: 56px;
+  border-color: rgba(123,47,255,0.55);
+}
+
+/* ── Root ─────────────────────────────────────────────────────────────────── */
+.ac-root {
+  min-height: 100vh;
+  background: #060810;
+  color: #e8eaf0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.ac-star-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ac-blob {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+}
+.ac-blob-1 { width: 500px; height: 500px; background: rgba(0,229,255,0.055); top: -150px; left: -150px; }
+.ac-blob-2 { width: 400px; height: 400px; background: rgba(123,47,255,0.06); bottom: -100px; right: -100px; }
+
+.ac-root > *:not(.ac-star-canvas):not(.ac-blob) { position: relative; z-index: 1; }
+
+/* ── Navbar ───────────────────────────────────────────────────────────────── */
+.ac-nav {
+  padding: 20px 48px;
+  background: rgba(6,8,16,0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.ac-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.ac-logo-mark {
+  display: flex;
+  align-items: center;
+  filter: drop-shadow(0 0 8px rgba(0,229,255,0.35));
+  transition: filter 0.3s;
+}
+.ac-logo:hover .ac-logo-mark {
+  filter: drop-shadow(0 0 14px rgba(0,229,255,0.65));
+}
+
+.ac-logo-text {
+  font-size: 18px;
+  font-weight: 700;
+  background: linear-gradient(90deg, #00e5ff, #7b2fff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Main ─────────────────────────────────────────────────────────────────── */
+.ac-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+/* ── Card ─────────────────────────────────────────────────────────────────── */
+.ac-card {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  background: rgba(255,255,255,0.035);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 24px;
+  padding: 40px 36px;
+  box-shadow:
+    0 0 0 1px rgba(0,229,255,0.05),
+    0 30px 80px rgba(0,0,0,0.5),
+    0 0 50px rgba(0,229,255,0.04);
+  overflow: hidden;
+}
+
+/* Animated glow border on card */
+.ac-card-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  background: transparent;
+  pointer-events: none;
+  z-index: 0;
+}
+.ac-card-glow::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 25px;
+  background: linear-gradient(135deg, rgba(0,229,255,0.15), rgba(123,47,255,0.1), transparent 60%);
+  pointer-events: none;
+}
+
+.ac-card > * { position: relative; z-index: 1; }
+
+/* ── Card header ──────────────────────────────────────────────────────────── */
+.ac-card-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+  text-align: center;
+}
+
+.ac-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #e8eaf0;
+  margin: 0;
+}
+
+.ac-subtitle {
+  font-size: 13px;
+  color: rgba(255,255,255,0.4);
+  margin: 0;
+  line-height: 1.5;
+  max-width: 320px;
+}
+
+/* ── Form elements ────────────────────────────────────────────────────────── */
+.ac-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ac-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ac-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.5);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ac-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ac-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 12px;
+  color: #e8eaf0;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+.ac-input::placeholder { color: rgba(255,255,255,0.2); }
+.ac-input:focus {
+  border-color: rgba(0,229,255,0.5);
+  background: rgba(0,229,255,0.04);
+  box-shadow: 0 0 0 3px rgba(0,229,255,0.08), 0 0 20px rgba(0,229,255,0.06);
+}
+.ac-input:disabled { opacity: 0.5; }
+
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
+.ac-btn-primary {
+  width: 100%;
+  padding: 13px 20px;
+  background: linear-gradient(135deg, #00c8e0, #7b2fff);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition: all 0.25s;
+  box-shadow: 0 4px 20px rgba(0,229,255,0.2);
+  margin-top: 4px;
+}
+.ac-btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #00e5ff, #9b4fff);
+  box-shadow: 0 6px 30px rgba(0,229,255,0.35);
+  transform: translateY(-2px);
+}
+.ac-btn-primary:disabled { opacity: 0.55; }
+
+.ac-btn-google {
+  width: 100%;
+  padding: 12px 20px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  color: rgba(255,255,255,0.75);
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.25s;
+}
+.ac-btn-google:hover:not(:disabled) {
+  background: rgba(255,255,255,0.07);
+  border-color: rgba(0,229,255,0.25);
+  color: #e8eaf0;
+}
+.ac-btn-google:disabled { opacity: 0.55; }
+
+/* Google G icon */
+.ac-google-icon {
+  width: 18px; height: 18px;
+  flex-shrink: 0;
+}
+
+/* ── Divider ──────────────────────────────────────────────────────────────── */
+.ac-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0;
+}
+.ac-divider-line { flex: 1; height: 1px; background: rgba(255,255,255,0.07); }
+.ac-divider-text { font-size: 11px; color: rgba(255,255,255,0.25); font-weight: 600; letter-spacing: 0.06em; }
+
+/* ── Error / Success ──────────────────────────────────────────────────────── */
+.ac-error {
+  padding: 10px 14px;
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-radius: 10px;
+  color: #fca5a5;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.ac-success {
+  padding: 12px 14px;
+  background: rgba(16,185,129,0.1);
+  border: 1px solid rgba(16,185,129,0.25);
+  border-radius: 10px;
+  color: #6ee7b7;
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+
+/* ── Footer text / links ──────────────────────────────────────────────────── */
+.ac-footer-text {
+  text-align: center;
+  font-size: 13px;
+  color: rgba(255,255,255,0.35);
+  margin-top: 20px;
+}
+
+.ac-link {
+  color: #00e5ff;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+.ac-link:hover { opacity: 0.8; text-decoration: underline; }
+
+.ac-forgot {
+  font-size: 12px;
+  color: rgba(255,255,255,0.35);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.ac-forgot:hover { color: #00e5ff; }
+
+.ac-footer-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 20px;
+  font-size: 13px;
+}
+.ac-dot { color: rgba(255,255,255,0.2); }
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .ac-nav  { padding: 16px 20px; }
+  .ac-card { padding: 28px 20px; border-radius: 20px; }
+  .ac-main { padding: 24px 16px; }
+}

@@ -1,0 +1,129 @@
+.wrapper {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin: 4px 16px;
+}
+
+.sent     { flex-direction: row-reverse; }
+.received { flex-direction: row; }
+
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-surface-1);
+  border: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  flex-shrink: 0;
+}
+
+.bubble {
+  max-width: 65%;
+  padding: 10px 14px;
+  border-radius: 18px;
+  position: relative;
+}
+
+.bubbleSent {
+  background: linear-gradient(135deg, #00e5ff22, #7b2fff33);
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  border-bottom-right-radius: 4px;
+}
+
+.bubbleReceived {
+  background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+  border: 1px solid var(--glass-border);
+  border-bottom-left-radius: 4px;
+}
+
+.senderName {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-accent-primary);
+  margin-bottom: 3px;
+}
+
+.content {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+  word-break: break-word;
+}
+
+.decryptError {
+  font-size: 12px;
+  color: #ff6b6b;
+  font-style: italic;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.time {
+  font-size: 10px;
+  color: var(--color-text-secondary);
+}
+
+.ticks { font-size: 10px; color: var(--color-text-secondary); }
+.ticks.read { color: #00e5ff; }
+.ticks.sent { color: var(--color-text-secondary); opacity: 0.6; }
+
+.reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.reactionChip {
+  background: var(--color-surface-1);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--color-text-primary);
+  transition: background 0.2s;
+}
+.reactionChip:hover { background: rgba(255,255,255,0.1); }
+
+.mediaImg {
+  max-width: 240px;
+  max-height: 180px;
+  border-radius: 8px;
+  cursor: pointer;
+  object-fit: cover;
+  margin-top: 6px;
+}
+
+.mediaVideo {
+  max-width: 280px;
+  border-radius: 8px;
+  margin-top: 6px;
+}
+
+.mediaFile {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--color-surface-1);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--color-accent-primary);
+  font-size: 12px;
+  margin-top: 6px;
+}
