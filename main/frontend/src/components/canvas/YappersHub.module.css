@@ -3,29 +3,34 @@
   width: 100vw;
   height: 100vh;
   overflow: hidden;
+  position: relative;
+  z-index: 1;
+  /* Background is handled by CosmicBackground canvas in ChatPage */
+  background: transparent;
 }
 
 .canvas {
   flex: 1;
   position: relative;
   overflow: hidden;
+  background: transparent;
 }
 
-/* Subtle star field */
+/* Subtle star field overlay (static, on top of the animated canvas) */
 .stars {
   position: absolute;
   inset: 0;
-  background-image:
-    radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.3) 0%, transparent 100%),
-    radial-gradient(1px 1px at 30% 60%, rgba(255,255,255,0.2) 0%, transparent 100%),
-    radial-gradient(1px 1px at 50% 10%, rgba(255,255,255,0.3) 0%, transparent 100%),
-    radial-gradient(1px 1px at 70% 40%, rgba(255,255,255,0.15) 0%, transparent 100%),
-    radial-gradient(1px 1px at 85% 75%, rgba(255,255,255,0.25) 0%, transparent 100%),
-    radial-gradient(1px 1px at 20% 85%, rgba(255,255,255,0.2) 0%, transparent 100%),
-    radial-gradient(1px 1px at 60% 90%, rgba(255,255,255,0.15) 0%, transparent 100%),
-    radial-gradient(1px 1px at 90% 15%, rgba(255,255,255,0.3) 0%, transparent 100%);
   pointer-events: none;
+  z-index: 0;
 }
+
+/* Make sure nodes render above background */
+.canvas > *:not(.stars):not(.auroraBlob) {
+  position: relative;
+  z-index: 1;
+}
+
+.auroraBlob { display: none; }
 
 .emptyState {
   position: absolute;
@@ -33,4 +38,82 @@
   left: 50%;
   transform: translate(-50%, -50%);
   text-align: center;
+}
+
+/* ── Improved empty state ─────────────────────────────────────────────────── */
+.emptyState {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.emptyOrb {
+  position: absolute;
+  width: 400px; height: 400px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,229,255,0.06), transparent 70%);
+  pointer-events: none;
+}
+
+.emptyOrb2 {
+  position: absolute;
+  width: 280px; height: 280px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(123,47,255,0.05), transparent 70%);
+  pointer-events: none;
+  top: 40%; left: 60%;
+}
+
+.emptyContent {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+}
+
+.emptyIcon {
+  animation: empty-pulse 3s ease-in-out infinite;
+}
+@keyframes empty-pulse {
+  0%,100% { filter: drop-shadow(0 0 8px rgba(0,229,255,0.3)); }
+  50%      { filter: drop-shadow(0 0 20px rgba(0,229,255,0.6)); }
+}
+
+.emptyTitle {
+  font-size: 20px; font-weight: 700; color: rgba(255,255,255,0.6);
+  margin: 0;
+}
+
+.emptySub {
+  font-size: 13px; color: rgba(255,255,255,0.3); max-width: 280px;
+  line-height: 1.6; margin: 0;
+}
+
+.emptyActions {
+  display: flex; gap: 10px; margin-top: 4px;
+}
+
+.emptyBtnPrimary {
+  display: flex; align-items: center; gap: 7px;
+  padding: 10px 20px; border-radius: 10px;
+  background: linear-gradient(135deg, rgba(0,229,255,0.12), rgba(123,47,255,0.15));
+  border: 1px solid rgba(0,229,255,0.3);
+  color: #00e5ff; font-size: 13px; font-weight: 600;
+  transition: all 0.25s;
+}
+.emptyBtnPrimary:hover {
+  background: linear-gradient(135deg, rgba(0,229,255,0.2), rgba(123,47,255,0.22));
+  box-shadow: 0 0 20px rgba(0,229,255,0.2);
+  transform: translateY(-1px);
+}
+
+.emptyBtnSecondary {
+  display: flex; align-items: center; gap: 7px;
+  padding: 10px 20px; border-radius: 10px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.45); font-size: 13px; font-weight: 600;
+  transition: all 0.25s;
+}
+.emptyBtnSecondary:hover {
+  background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.7);
 }

@@ -9,6 +9,7 @@ import channelsRouter from './routes/channels.js';
 import searchRouter from './routes/search.js';
 import mediaRouter from './routes/media.js';
 import encryptionRouter from './routes/encryption.js';
+import usersRouter from './routes/users.js';
 import { initSocket } from './socket/index.js';
 import { chatAuthMiddleware } from './middleware/chatAuth.js';
 
@@ -43,10 +44,11 @@ app.use('/api/auth', authRoutes);
 app.use('/api/chat', chatAuthRouter);
 
 // Chat REST routes — protected by Chat JWT
-app.use('/api/channels', chatAuthMiddleware, channelsRouter);
-app.use('/api/search', chatAuthMiddleware, searchRouter);
-app.use('/api/media', chatAuthMiddleware, mediaRouter);
+app.use('/api/channels',   chatAuthMiddleware, channelsRouter);
+app.use('/api/search',     chatAuthMiddleware, searchRouter);
+app.use('/api/media',      chatAuthMiddleware, mediaRouter);
 app.use('/api/encryption', chatAuthMiddleware, encryptionRouter);
+app.use('/api/users',      chatAuthMiddleware, usersRouter);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

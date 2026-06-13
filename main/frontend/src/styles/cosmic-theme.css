@@ -102,17 +102,10 @@
 .cosmic-canvas {
   width: 100vw;
   height: 100vh;
-  background: radial-gradient(
-    ellipse at 30% 20%,
-    color-mix(in srgb, var(--color-accent-secondary) 8%, transparent),
-    transparent 60%
-  ),
-  radial-gradient(
-    ellipse at 70% 80%,
-    color-mix(in srgb, var(--color-accent-primary) 5%, transparent),
-    transparent 60%
-  ),
-  linear-gradient(160deg, var(--color-canvas-bg-start), var(--color-canvas-bg-end));
+  background:
+    radial-gradient(ellipse at 30% 20%, color-mix(in srgb, var(--color-accent-secondary) 8%, transparent), transparent 60%),
+    radial-gradient(ellipse at 70% 80%, color-mix(in srgb, var(--color-accent-primary) 5%, transparent), transparent 60%),
+    linear-gradient(160deg, var(--color-canvas-bg-start), var(--color-canvas-bg-end));
   position: relative;
   overflow: hidden;
 }

@@ -3,6 +3,9 @@ import { AnimatePresence } from 'framer-motion';
 import OrbitalNode from './OrbitalNode';
 import Sidebar from './Sidebar';
 import ExpandedChatView from './ExpandedChatView';
+import GlobalSearch from './GlobalSearch';
+import ProfileModal from './ProfileModal';
+import SettingsPanel from './SettingsPanel';
 import { usePresence } from '../../hooks/usePresence';
 import { API_BASE_URL } from '../../firebaseClient';
 import styles from './YappersHub.module.css';
@@ -17,10 +20,13 @@ import styles from './YappersHub.module.css';
  *   - New messages update node glow/position in real time
  */
 export default function YappersHub({ chatJwt, chatSocket, currentUserId }) {
-  const [zones, setZones]           = useState([]);
+  const [zones, setZones]               = useState([]);
   const [selectedZone, setSelectedZone] = useState(null);
-  const [positions, setPositions]   = useState({});
-  const [scales, setScales]         = useState({});
+  const [positions, setPositions]       = useState({});
+  const [scales, setScales]             = useState({});
+  const [searchOpen, setSearchOpen]     = useState(false);
+  const [profileUserId, setProfileUserId] = useState(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const canvasRef  = useRef(null);
   const rafRef     = useRef(null);
   const stateRef   = useRef({}); // physics state per node
@@ -151,12 +157,16 @@ export default function YappersHub({ chatJwt, chatSocket, currentUserId }) {
     <div className={styles.hub}>
       <Sidebar
         onNewZone={() => {/* TODO: ZoneIgnitionSystem */}}
-        onSearch={() => {/* TODO: CosmicExplorer */}}
+        onSearch={() => setSearchOpen(true)}
+        onSettings={() => setSettingsOpen(true)}
+        onProfile={() => setProfileUserId(currentUserId)}
       />
 
       <div ref={canvasRef} className={`${styles.canvas} cosmic-canvas`}>
         {/* Stars background */}
         <div className={styles.stars} />
+        {/* Liquid aurora blob */}
+        <div className={styles.auroraBlob} />
 
         {/* Orbital nodes */}
         {zones.map((zone) => (
@@ -179,7 +189,36 @@ export default function YappersHub({ chatJwt, chatSocket, currentUserId }) {
         {/* Empty state */}
         {zones.length === 0 && (
           <div className={styles.emptyState}>
-            <p className="text-secondary">No zones yet. Create one to start chatting!</p>
+            <div className={styles.emptyOrb} />
+            <div className={styles.emptyOrb2} />
+            <div className={styles.emptyContent}>
+              <div className={styles.emptyIcon}>
+                <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                  <circle cx="24" cy="24" r="22" stroke="rgba(0,229,255,0.3)" strokeWidth="1.5" strokeDasharray="4 4"/>
+                  <circle cx="24" cy="24" r="14" stroke="rgba(0,229,255,0.15)" strokeWidth="1"/>
+                  <circle cx="24" cy="24" r="6" fill="rgba(0,229,255,0.1)" stroke="rgba(0,229,255,0.4)" strokeWidth="1.5"/>
+                  <circle cx="24" cy="24" r="2" fill="#00e5ff"/>
+                </svg>
+              </div>
+              <h3 className={styles.emptyTitle}>Your Canvas is Empty</h3>
+              <p className={styles.emptySub}>Create a Zone to start chatting, or search for people to connect with</p>
+              <div className={styles.emptyActions}>
+                <button className={styles.emptyBtnPrimary} onClick={() => setSearchOpen(true)}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.5"/>
+                    <path d="M16 16 L21 21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                  Find People
+                </button>
+                <button className={styles.emptyBtnSecondary}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                  Create Zone
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -194,6 +233,53 @@ export default function YappersHub({ chatJwt, chatSocket, currentUserId }) {
             chatJwt={chatJwt}
             chatSocket={chatSocket}
             onClose={() => setSelectedZone(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Settings panel */}
+      <AnimatePresence>
+        {settingsOpen && (
+          <SettingsPanel
+            chatJwt={chatJwt}
+            onClose={() => setSettingsOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Global search overlay */}
+      <AnimatePresence>
+        {searchOpen && (
+          <GlobalSearch
+            chatJwt={chatJwt}
+            currentUserId={currentUserId}
+            onClose={() => setSearchOpen(false)}
+            onViewProfile={(uid) => { setProfileUserId(uid); setSearchOpen(false); }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Profile modal */}
+      <AnimatePresence>
+        {profileUserId && (
+          <ProfileModal
+            userId={profileUserId}
+            currentUserId={currentUserId}
+            chatJwt={chatJwt}
+            onClose={() => setProfileUserId(null)}
+            onMessage={(user) => {
+              // Open a DM zone with this user
+              setSelectedZone({
+                id: user.id,
+                name: user.displayName,
+                type: 'dm',
+                recipientId: user.id,
+                memberCount: 2,
+                avatars: [{ name: user.displayName, photoURL: user.photoURL }],
+                unreadCount: 0,
+                isActive: false,
+              });
+            }}
           />
         )}
       </AnimatePresence>

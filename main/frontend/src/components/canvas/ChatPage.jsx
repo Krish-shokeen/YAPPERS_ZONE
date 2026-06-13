@@ -7,6 +7,87 @@ import { useChatSocket } from '../../hooks/useChatSocket';
 import YappersHub from './YappersHub';
 import '../../styles/cosmic-theme.css';
 
+/* ── Animated star + nebula canvas — matches landing page exactly ─────────── */
+function CosmicBackground() {
+  const ref = useRef(null);
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let raf;
+    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+    resize();
+    window.addEventListener('resize', resize);
+
+    const stars = Array.from({ length: 220 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 1.3 + 0.2,
+      a: Math.random(),
+      s: Math.random() * 0.004 + 0.001,
+    }));
+
+    const orbs = [
+      { x: 0.15, y: 0.25, r: 260, c: 'rgba(0,229,255,0.055)', angle: 0, sp: 0.0005 },
+      { x: 0.80, y: 0.60, r: 320, c: 'rgba(123,47,255,0.06)',  angle: 2, sp: -0.0003 },
+      { x: 0.50, y: 0.85, r: 200, c: 'rgba(255,110,199,0.04)', angle: 4, sp: 0.0004 },
+    ];
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Base deep background
+      const bg = ctx.createLinearGradient(0, 0, canvas.width * 0.3, canvas.height);
+      bg.addColorStop(0, '#060810');
+      bg.addColorStop(0.5, '#06090f');
+      bg.addColorStop(1, '#060810');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Animated nebula orbs
+      orbs.forEach((o) => {
+        o.angle += o.sp;
+        const x = canvas.width  * o.x + Math.sin(o.angle * 0.7) * 60;
+        const y = canvas.height * o.y + Math.cos(o.angle * 0.5) * 40;
+        const g = ctx.createRadialGradient(x, y, 0, x, y, o.r);
+        g.addColorStop(0, o.c);
+        g.addColorStop(1, 'transparent');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(x, y, o.r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // Stars with twinkle
+      stars.forEach((s) => {
+        s.a += s.s;
+        if (s.a > 1 || s.a < 0) s.s *= -1;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${s.a * 0.65})`;
+        ctx.fill();
+      });
+
+      raf = requestAnimationFrame(draw);
+    };
+
+    raf = requestAnimationFrame(draw);
+    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', resize); };
+  }, []);
+
+  return (
+    <canvas
+      ref={ref}
+      style={{
+        position: 'fixed', inset: 0,
+        width: '100vw', height: '100vh',
+        pointerEvents: 'none',
+        zIndex: 0,
+      }}
+    />
+  );
+}
+
 /* ── Cosmic cursor — portal rendered so it always stays on top ─────────────── */
 function CosmicCursor() {
   const dotRef  = useRef(null);
@@ -101,6 +182,7 @@ export default function ChatPage() {
 
   return (
     <>
+      <CosmicBackground />
       <CosmicCursor />
       <YappersHub
         chatJwt={chatJwt}

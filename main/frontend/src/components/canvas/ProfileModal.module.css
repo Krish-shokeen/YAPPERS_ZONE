@@ -1,0 +1,193 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  padding: 20px;
+}
+
+.card {
+  position: relative;
+  width: 320px;
+  background: rgba(10,14,26,0.95);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(0,229,255,0.08), 0 30px 80px rgba(0,0,0,0.7), 0 0 40px rgba(0,229,255,0.06);
+}
+
+/* Gradient banner at top */
+.banner {
+  height: 80px;
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--sc, #00e5ff) 30%, #0a0e1a),
+    color-mix(in srgb, #7b2fff 20%, #0a0e1a));
+}
+
+.closeBtn {
+  position: absolute;
+  top: 12px; right: 12px;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.5);
+  font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 10;
+  transition: all 0.2s;
+}
+.closeBtn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+/* Avatar */
+.avatarWrap {
+  position: absolute;
+  top: 44px;
+  left: 20px;
+}
+
+.avatar {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  border: 4px solid #0a0e1a;
+  background: rgba(255,255,255,0.05);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 700; color: #e8eaf0;
+  position: relative;
+  box-shadow: 0 0 0 2px var(--sc, #00e5ff), 0 0 16px color-mix(in srgb, var(--sc, #00e5ff) 40%, transparent);
+  overflow: visible;
+}
+.avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+
+.statusDot {
+  position: absolute;
+  bottom: 2px; right: 2px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 2.5px solid #0a0e1a;
+}
+
+/* Identity */
+.identity {
+  padding: 52px 20px 0;
+  display: flex; flex-direction: column; gap: 4px;
+}
+
+.displayName {
+  font-size: 18px; font-weight: 700; color: #e8eaf0; margin: 0;
+}
+
+.yapperHandle {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: none; border: none; padding: 0;
+  color: rgba(255,255,255,0.45); font-size: 12px; font-weight: 600;
+  font-family: 'Courier New', monospace;
+  position: relative;
+  transition: color 0.2s;
+}
+.yapperHandle:hover { color: #00e5ff; }
+
+.copiedToast {
+  position: absolute;
+  bottom: -20px; left: 0;
+  font-size: 10px; color: #00e5ff;
+  font-family: sans-serif;
+  animation: fadeup 0.3s ease;
+}
+@keyframes fadeup {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.statusRow {
+  display: flex; align-items: center; gap: 5px;
+  margin-top: 4px;
+}
+.statusLabel { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.4); }
+.statusText  { font-size: 11px; color: rgba(255,255,255,0.3); font-style: italic; }
+
+/* Zones */
+.zonesSection { padding: 16px 20px 0; }
+.zonesSectionTitle { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 8px; }
+.zonesBadges { display: flex; flex-wrap: wrap; gap: 6px; }
+.zoneBadge {
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 20px;
+  background: rgba(0,229,255,0.06); border: 1px solid rgba(0,229,255,0.2);
+  font-size: 11px; color: #00e5ff;
+}
+.zoneBadgeIcon {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #00e5ff; box-shadow: 0 0 6px #00e5ff;
+}
+
+/* Member since */
+.memberSince {
+  padding: 12px 20px 0;
+  font-size: 11px; color: rgba(255,255,255,0.25);
+}
+
+/* Actions */
+.actions {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px; padding: 16px 20px 20px;
+}
+
+.btnAdd {
+  padding: 11px;
+  background: linear-gradient(135deg, rgba(0,229,255,0.12), rgba(123,47,255,0.15));
+  border: 1px solid rgba(0,229,255,0.35);
+  border-radius: 10px;
+  color: #00e5ff; font-size: 13px; font-weight: 700;
+  transition: all 0.25s;
+  box-shadow: 0 0 12px rgba(0,229,255,0.1);
+}
+.btnAdd:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(0,229,255,0.2), rgba(123,47,255,0.22));
+  box-shadow: 0 0 20px rgba(0,229,255,0.25);
+  transform: translateY(-1px);
+}
+.btnAdd.btnAddDone {
+  border-color: rgba(255,255,255,0.12); color: rgba(255,255,255,0.4);
+  background: rgba(255,255,255,0.03);
+}
+
+.btnMessage {
+  padding: 11px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 600;
+  transition: all 0.25s;
+}
+.btnMessage:hover {
+  background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2);
+  color: #fff;
+}
+
+.ownProfileNote {
+  text-align: center; padding: 14px 20px 20px;
+  font-size: 11px; color: rgba(255,255,255,0.25);
+}
+
+/* Loading */
+.loading {
+  display: flex; justify-content: center; gap: 6px;
+  padding: 48px 20px;
+}
+.loadingDot {
+  width: 8px; height: 8px; border-radius: 50%; background: #00e5ff;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+.loadingDot:nth-child(2) { animation-delay: 0.2s; }
+.loadingDot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes pulse {
+  0%,60%,100% { transform: scale(0.6); opacity: 0.4; }
+  30%          { transform: scale(1); opacity: 1; }
+}
+
+.error { text-align: center; padding: 40px 20px; color: rgba(255,255,255,0.3); font-size: 13px; }
