@@ -27,6 +27,7 @@ const userSchema = new mongoose.Schema({
 
   createdAt:   { type: Date, default: Date.now },
   lastLoginAt: { type: Date, default: Date.now },
+  lastSeenAt:  { type: Date, default: Date.now },
   isActive:    { type: Boolean, default: true },
 }, { timestamps: true });
 
@@ -35,7 +36,7 @@ userSchema.index({ yapperHandle: 1 });
 userSchema.index({ displayName: 1 });
 
 // Generate a unique Yapper handle on first save if not set
-userSchema.pre('save', async function (next) {
+userSchema.pre('save', function () {
   if (!this.yapperHandle && this.displayName) {
     const base = this.displayName
       .toLowerCase()
@@ -45,7 +46,6 @@ userSchema.pre('save', async function (next) {
     this.yapperHandle = `${base}#${tag}`;
     this.yapperTag    = tag;
   }
-  next();
 });
 
 export default mongoose.model('User', userSchema);

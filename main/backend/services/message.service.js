@@ -84,15 +84,22 @@ const messageSchema = new mongoose.Schema(
       default: 'sent',
     },
 
-    // Media attachments (images, videos, files)
-    mediaAttachments: [
-      {
-        mediaId: mongoose.Schema.Types.ObjectId,
-        mimeType: String,
-        name: String,
-        size: Number,
-      },
-    ],
+    deliveredAt: {
+      type: Date,
+      default: null,
+    },
+
+    readAt: {
+      type: Date,
+      default: null,
+    },
+
+    isPinned: {
+      type: Boolean,
+      default: false,
+    },
+
+
 
     // Emoji reactions: [{ emoji: '👍', userIds: [ObjectId, ...] }]
     reactions: [
@@ -299,10 +306,199 @@ export async function getHistory({ conversationId, type, currentUserId, cursor, 
  * @param {'delivered'|'read'} status
  */
 export async function updateDeliveryStatus(messageId, status) {
+  const update = { deliveryStatus: status, updatedAt: new Date() };
+  if (status === 'delivered') {
+    update.deliveredAt = new Date();
+  } else if (status === 'read') {
+    update.readAt = new Date();
+    update.deliveredAt = new Date(); // fallback/ensure delivered is set
+  }
   await Message.updateOne(
     { messageId },
-    { $set: { deliveryStatus: status, updatedAt: new Date() } }
+    { $set: update }
   );
+}
+
+/**
+ * addReaction — toggle or add an emoji reaction for a message.
+ * If the user has already reacted with this emoji, removes their reaction.
+ * Otherwise, adds their reaction.
+ * Enforces the reaction cap of 20 distinct emojis per message.
+ *
+ * @param {string} messageId - UUIDv4
+ * @param {string|ObjectId} userId
+ * @param {string} emoji
+ * @returns {Promise<{ messageId: string, reactions: Array }>}
+ */
+export async function addReaction(messageId, userId, emoji) {
+  const message = await Message.findOne({ messageId });
+  if (!message) {
+    throw new ChatError('MESSAGE_NOT_FOUND', 404, 'Message not found');
+  }
+
+  if (!message.reactions) {
+    message.reactions = [];
+  }
+
+  const uIdStr = userId.toString();
+  const existingReactionIndex = message.reactions.findIndex((r) => r.emoji === emoji);
+
+  if (existingReactionIndex > -1) {
+    const rx = message.reactions[existingReactionIndex];
+    const userIndex = rx.userIds.findIndex((id) => id.toString() === uIdStr);
+
+    if (userIndex > -1) {
+      // Toggle remove
+      rx.userIds.splice(userIndex, 1);
+      if (rx.userIds.length === 0) {
+        message.reactions.splice(existingReactionIndex, 1);
+      }
+    } else {
+      rx.userIds.push(userId);
+    }
+  } else {
+    // New emoji reaction
+    if (message.reactions.length >= 20) {
+      throw new ChatError('REACTION_CAP_EXCEEDED', 400, 'Reactions limit exceeded (max 20 distinct emojis)');
+    }
+    message.reactions.push({
+      emoji,
+      userIds: [userId],
+    });
+  }
+
+  await message.save();
+
+  return {
+    messageId,
+    reactions: message.reactions.map((r) => ({
+      emoji: r.emoji,
+      count: r.userIds.length,
+      userIds: r.userIds,
+    })),
+  };
+}
+
+/**
+ * removeReaction — remove an emoji reaction for a user.
+ *
+ * @param {string} messageId - UUIDv4
+ * @param {string|ObjectId} userId
+ * @param {string} emoji
+ * @returns {Promise<{ messageId: string, reactions: Array }>}
+ */
+export async function removeReaction(messageId, userId, emoji) {
+  const message = await Message.findOne({ messageId });
+  if (!message) {
+    throw new ChatError('MESSAGE_NOT_FOUND', 404, 'Message not found');
+  }
+
+  if (message.reactions) {
+    const uIdStr = userId.toString();
+    const rxIndex = message.reactions.findIndex((r) => r.emoji === emoji);
+    if (rxIndex > -1) {
+      const rx = message.reactions[rxIndex];
+      const userIndex = rx.userIds.findIndex((id) => id.toString() === uIdStr);
+      if (userIndex > -1) {
+        rx.userIds.splice(userIndex, 1);
+        if (rx.userIds.length === 0) {
+          message.reactions.splice(rxIndex, 1);
+        }
+      }
+    }
+  }
+
+  await message.save();
+
+  return {
+    messageId,
+    reactions: message.reactions.map((r) => ({
+      emoji: r.emoji,
+      count: r.userIds.length,
+      userIds: r.userIds,
+    })),
+  };
+}
+
+/**
+ * insertThreadReply — persist a new thread reply to MongoDB.
+ *
+ * @param {string|ObjectId} parentId - parent message's MongoDB _id
+ * @param {object} payload
+ *   senderId       (ObjectId|string) — who's sending
+ *   content        (string)          — plaintext, 1–4000 chars
+ *   encryptedPayload (string)        — base64 ciphertext (E2E), replaces content
+ *
+ * @returns {Promise<Message>} the saved reply document
+ */
+export async function insertThreadReply(parentId, payload) {
+  const { senderId, content, encryptedPayload } = payload;
+
+  const parentMessage = await Message.findById(parentId);
+  if (!parentMessage) {
+    throw new ChatError('MESSAGE_NOT_FOUND', 404, 'Parent message not found');
+  }
+
+  if (!encryptedPayload) {
+    if (!content || content.trim().length === 0) {
+      throw new ChatError('THREAD_REPLY_INVALID', 400, 'Thread reply content cannot be empty');
+    }
+    if (content.length > 4000) {
+      throw new ChatError('THREAD_REPLY_INVALID', 400, 'Thread reply content exceeds 4000 characters');
+    }
+  }
+
+  const reply = new Message({
+    messageId: uuidv4(),
+    senderId,
+    recipientId: parentMessage.recipientId || null,
+    channelId: parentMessage.channelId || null,
+    parentMessageId: parentMessage._id,
+    content: encryptedPayload ? null : content,
+    encryptedPayload: encryptedPayload || null,
+    isEncrypted: !!encryptedPayload,
+    deliveryStatus: 'sent',
+  });
+
+  try {
+    await reply.save();
+    return reply;
+  } catch (err) {
+    throw new ChatError('MESSAGE_PERSIST_FAILED', 500, 'Failed to save thread reply to database');
+  }
+}
+
+/**
+ * getThreadHistory — fetch paginated thread replies for a parent message.
+ *
+ * @param {string|ObjectId} parentMessageId - parent message's MongoDB _id
+ * @param {Date|null} cursor - fetch replies older than this timestamp
+ * @param {number} limit - default 50
+ *
+ * @returns {Promise<{ messages: Message[], hasMore: boolean }>}
+ */
+export async function getThreadHistory(parentMessageId, cursor, limit = 50) {
+  const query = {
+    parentMessageId,
+    isDeleted: false,
+  };
+
+  if (cursor) {
+    query.createdAt = { $lt: new Date(cursor) };
+  }
+
+  const messages = await Message.find(query)
+    .sort({ createdAt: -1 })
+    .limit(limit + 1)
+    .lean();
+
+  const hasMore = messages.length > limit;
+  if (hasMore) messages.pop();
+
+  return {
+    messages,
+    hasMore,
+  };
 }
 
 // Export models so other services can use them

@@ -1,5 +1,5 @@
 import express from 'express';
-import { Channel, ChannelMember } from '../services/message.service.js';
+import { Channel, ChannelMember, Message, getHistory, getThreadHistory } from '../services/message.service.js';
 import { ChatError } from '../chat-errors.js';
 
 const router = express.Router();
@@ -145,6 +145,39 @@ router.get('/', async (req, res) => {
   }
 });
 
+// ─── GET /api/channels/public ────────────────────────────────────────────────
+/**
+ * List all public channels (excluding channels the requesting user is already a member of).
+ * Used by CosmicExplorer for zone discovery.
+ */
+router.get('/public', async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    // Find channel IDs user is already in
+    const memberships = await ChannelMember.find({ userId }).select('channelId').lean();
+    const joinedChannelIds = memberships.map((m) => m.channelId.toString());
+
+    // Find all channels that the user is not in
+    const channels = await Channel.find({ _id: { $nin: joinedChannelIds } })
+      .select('name description memberCount createdAt')
+      .lean();
+
+    const result = channels.map((ch) => ({
+      id: ch._id,
+      name: ch.name,
+      description: ch.description,
+      memberCount: ch.memberCount,
+      createdAt: ch.createdAt,
+    }));
+
+    res.json({ channels: result });
+  } catch (err) {
+    console.error('[GET /channels/public]', err);
+    res.status(500).json({ code: 'INTERNAL_ERROR', message: 'Failed to fetch public channels' });
+  }
+});
+
 // ─── GET /api/channels/:channelId ─────────────────────────────────────────────
 /**
  * Get details of a single channel.
@@ -183,6 +216,128 @@ router.get('/:channelId', async (req, res) => {
     }
     console.error('[GET /channels/:id]', err);
     res.status(500).json({ code: 'INTERNAL_ERROR', message: 'Failed to fetch channel' });
+  }
+});
+
+// ─── GET /api/channels/:channelId/messages ──────────────────────────────────
+/**
+ * Get message history for a conversation (channel or DM).
+ *
+ * Query params: cursor (timestamp), limit (number)
+ */
+router.get('/:channelId/messages', async (req, res) => {
+  try {
+    const { channelId } = req.params;
+    const { cursor, limit = 50 } = req.query;
+    const currentUserId = req.user.userId;
+
+    // Check if conversation is channel or DM
+    const isChannel = await Channel.exists({ _id: channelId });
+    const type = isChannel ? 'channel' : 'dm';
+
+    const history = await getHistory({
+      conversationId: channelId,
+      type,
+      currentUserId,
+      cursor: cursor ? new Date(cursor) : null,
+      limit: parseInt(limit, 10),
+    });
+
+    res.json(history);
+  } catch (err) {
+    if (err instanceof ChatError) {
+      return res.status(err.statusCode).json({ code: err.code, message: err.message });
+    }
+    console.error('[GET /channels/:id/messages]', err);
+    res.status(500).json({ code: 'INTERNAL_ERROR', message: 'Failed to fetch conversation history' });
+  }
+});
+
+// ─── GET /api/channels/messages/:messageId/replies ──────────────────────────
+/**
+ * Get thread replies for a parent message.
+ *
+ * Query params: cursor (timestamp), limit (number)
+ */
+router.get('/messages/:messageId/replies', async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const { cursor, limit = 50 } = req.query;
+    const currentUserId = req.user.userId;
+
+    const parentMessage = await Message.findOne({ messageId });
+    if (!parentMessage) {
+      throw new ChatError('MESSAGE_NOT_FOUND', 404, 'Parent message not found');
+    }
+
+    // Authorize access
+    if (parentMessage.channelId) {
+      const isMember = await ChannelMember.exists({ channelId: parentMessage.channelId, userId: currentUserId });
+      if (!isMember) {
+        throw new ChatError('NOT_A_MEMBER', 403, 'You are not a member of this channel');
+      }
+    } else if (parentMessage.recipientId) {
+      const sId = parentMessage.senderId.toString();
+      const rId = parentMessage.recipientId.toString();
+      if (sId !== currentUserId.toString() && rId !== currentUserId.toString()) {
+        throw new ChatError('UNAUTHORIZED', 403, 'You are not authorized to access this conversation');
+      }
+    }
+
+    const history = await getThreadHistory(
+      parentMessage._id,
+      cursor ? new Date(cursor) : null,
+      parseInt(limit, 10)
+    );
+
+    res.json(history);
+  } catch (err) {
+    if (err instanceof ChatError) {
+      return res.status(err.statusCode).json({ code: err.code, message: err.message });
+    }
+    console.error('[GET /channels/messages/:messageId/replies]', err);
+    res.status(500).json({ code: 'INTERNAL_ERROR', message: 'Failed to fetch thread replies' });
+  }
+});
+
+// ─── GET /api/channels/:channelId/pins ──────────────────────────────────────
+router.get('/:channelId/pins', async (req, res) => {
+  try {
+    const { channelId } = req.params;
+    const currentUserId = req.user.userId;
+
+    const isChannel = await Channel.exists({ _id: channelId });
+    
+    let query = { isPinned: true, isDeleted: false };
+    if (isChannel) {
+      const isMember = await ChannelMember.exists({ channelId, userId: currentUserId });
+      if (!isMember) {
+        throw new ChatError('NOT_A_MEMBER', 403, 'You are not a member of this channel');
+      }
+      query.channelId = channelId;
+    } else {
+      if (channelId !== currentUserId.toString()) {
+        query.$or = [
+          { senderId: currentUserId, recipientId: channelId },
+          { senderId: channelId, recipientId: currentUserId }
+        ];
+      } else {
+        query.senderId = currentUserId;
+        query.recipientId = currentUserId;
+      }
+    }
+
+    const pins = await Message.find(query)
+      .populate('senderId', '_id displayName photoURL')
+      .sort({ createdAt: -1 })
+      .lean();
+    res.json({ pins });
+  } catch (err) {
+    if (err instanceof ChatError) {
+      return res.status(err.statusCode).json({ code: err.code, message: err.message });
+    }
+    console.error('[GET /channels/:id/pins]', err);
+    res.status(500).json({ code: 'INTERNAL_ERROR', message: 'Failed to fetch pinned messages' });
   }
 });
 

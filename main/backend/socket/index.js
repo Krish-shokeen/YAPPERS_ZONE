@@ -4,6 +4,9 @@ import { registerDmHandlers } from './handlers/dm.handler.js';
 import { registerChannelHandlers } from './handlers/channel.handler.js';
 import { registerPresenceHandlers } from './handlers/presence.handler.js';
 import { registerCallHandlers } from './handlers/call.handler.js';
+import { registerReactionHandlers } from './handlers/reaction.handler.js';
+import { registerThreadHandlers } from './handlers/thread.handler.js';
+import { registerPinHandlers } from './handlers/pin.handler.js';
 
 /**
  * Socket.io server — the real-time layer of YAPPERS_ZONE Chat.
@@ -94,6 +97,9 @@ export function initSocket(httpServer) {
     registerDmHandlers(socket, io);
     registerChannelHandlers(socket, io);
     registerCallHandlers(socket, io);
+    registerReactionHandlers(socket, io);
+    registerThreadHandlers(socket, io);
+    registerPinHandlers(socket, io);
 
     // Handle clean disconnect
     socket.on('disconnect', (reason) => {

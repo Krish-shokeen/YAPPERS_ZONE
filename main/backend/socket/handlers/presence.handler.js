@@ -3,6 +3,7 @@ import {
   setTyping, clearTyping, getTypingUsers, getStatuses,
 } from '../../services/presence.service.js';
 import { ChannelMember } from '../../services/message.service.js';
+import User from '../../models/User.js';
 import mongoose from 'mongoose';
 
 const HEARTBEAT_INTERVAL = 10_000; // 10 seconds
@@ -27,9 +28,18 @@ export function registerPresenceHandlers(socket, io) {
   // ─── On connect: go online ────────────────────────────────────────────────
   (async () => {
     await setOnline(userId);
+    let status = 'online';
+    try {
+      const userDoc = await User.findById(userId).select('statusMode').lean();
+      if (userDoc?.statusMode && userDoc.statusMode !== 'offline') {
+        status = userDoc.statusMode;
+      }
+    } catch (err) {
+      console.error('[presence.handler] Error fetching statusMode on connect:', err);
+    }
     const audience = await getContactRooms(userId);
     audience.forEach((roomId) => {
-      io.to(roomId).emit('presence:update', { userId, status: 'online' });
+      io.to(roomId).emit('presence:update', { userId, status });
     });
   })();
 
@@ -40,9 +50,18 @@ export function registerPresenceHandlers(socket, io) {
   socket.on('disconnect', async () => {
     clearInterval(heartbeatTimer);
     await setOffline(userId);
+    const now = new Date();
+    try {
+      await User.findByIdAndUpdate(userId, {
+        statusMode: 'offline',
+        lastSeenAt: now,
+      });
+    } catch (err) {
+      console.error('[presence.handler] Error updating lastSeenAt on disconnect:', err);
+    }
     const audience = await getContactRooms(userId);
     audience.forEach((roomId) => {
-      io.to(roomId).emit('presence:update', { userId, status: 'offline' });
+      io.to(roomId).emit('presence:update', { userId, status: 'offline', lastSeenAt: now.toISOString() });
     });
   });
 
@@ -50,8 +69,27 @@ export function registerPresenceHandlers(socket, io) {
   // Requirement 5.7 — frontend queries statuses before events arrive
   socket.on('presence:query', async ({ userIds } = {}) => {
     if (!Array.isArray(userIds) || userIds.length === 0) return;
-    const statuses = await getStatuses(userIds.slice(0, 500));
-    socket.emit('presence:statuses', statuses);
+    try {
+      const redisStatuses = await getStatuses(userIds.slice(0, 500));
+      const users = await User.find({ _id: { $in: userIds } }).select('_id statusMode lastSeenAt').lean();
+      const statuses = {};
+      users.forEach((u) => {
+        const idStr = u._id.toString();
+        const live = redisStatuses[idStr];
+        statuses[idStr] = {
+          status: live === 'online' ? (u.statusMode || 'online') : 'offline',
+          lastSeenAt: u.lastSeenAt || null,
+        };
+      });
+      socket.emit('presence:statuses', statuses);
+    } catch (err) {
+      console.error('[presence.handler] presence:query error:', err);
+      const statuses = {};
+      userIds.forEach((id) => {
+        statuses[id] = { status: 'offline', lastSeenAt: null };
+      });
+      socket.emit('presence:statuses', statuses);
+    }
   });
 
   // ─── Typing: start ────────────────────────────────────────────────────────
@@ -75,9 +113,8 @@ export function registerPresenceHandlers(socket, io) {
  * a DM or channel with the given user.
  *
  * These are the rooms that should receive presence:update events.
- * For simplicity we use channel memberships as the broadcast audience.
  */
-async function getContactRooms(userId) {
+export async function getContactRooms(userId) {
   try {
     const memberships = await ChannelMember.find({ userId }).select('channelId').lean();
     const channelIds = memberships.map((m) => m.channelId);
@@ -88,10 +125,16 @@ async function getContactRooms(userId) {
       userId: { $ne: new mongoose.Types.ObjectId(userId) },
     }).select('userId').lean();
 
+    // Get friends
+    const userDoc = await User.findById(userId).select('friends').lean();
+    const friendIds = userDoc?.friends ? userDoc.friends.map((f) => f.toString()) : [];
+
     // Return unique userIds (personal rooms)
-    const unique = [...new Set(others.map((o) => o.userId.toString()))];
+    const allIds = others.map((o) => o.userId.toString()).concat(friendIds);
+    const unique = [...new Set(allIds)];
     return unique;
-  } catch {
+  } catch (err) {
+    console.error('[presence.handler] getContactRooms error:', err);
     return [];
   }
 }

@@ -1,8 +1,32 @@
 import express from 'express';
 import User from '../models/User.js';
 import { ChatError } from '../chat-errors.js';
+import { getStatuses, setStatusMode } from '../services/presence.service.js';
+import { getContactRooms } from '../socket/handlers/presence.handler.js';
+import { io } from '../socket/index.js';
 
 const router = express.Router();
+
+// Helper to merge live Redis presence into user status modes
+async function mergeLiveStatuses(users) {
+  if (!users || users.length === 0) return users;
+  const userIds = users.map(u => (u._id || u.id).toString());
+  try {
+    const liveStatuses = await getStatuses(userIds);
+    return users.map(u => {
+      const uid = (u._id || u.id).toString();
+      const isOnline = liveStatuses[uid] === 'online';
+      let statusMode = 'offline';
+      if (isOnline) {
+        statusMode = (u.statusMode === 'offline' || !u.statusMode) ? 'online' : u.statusMode;
+      }
+      return { ...u, statusMode };
+    });
+  } catch (err) {
+    console.error('[users.js] mergeLiveStatuses error:', err);
+    return users;
+  }
+}
 
 // ─── GET /api/users/search?q=krish ────────────────────────────────────────
 /**
@@ -48,8 +72,10 @@ router.get('/search', async (req, res) => {
     const myFriendIds  = (me?.friends || []).map((id) => id.toString());
     const myRequestIds = (me?.friendRequests || []).map((id) => id.toString());
 
-    const users = results.map((u) => {
-      const uid = u._id.toString();
+    const resultsWithLive = await mergeLiveStatuses(results);
+
+    const users = resultsWithLive.map((u) => {
+      const uid = (u._id || u.id).toString();
       const isFriend  = myFriendIds.includes(uid);
       // Check if THIS user has a pending request from me in THEIR friendRequests
       const isPending = (u.friendRequests || []).some((id) => id.toString() === currentUserId);
@@ -77,13 +103,36 @@ router.get('/search', async (req, res) => {
 // Get a user's public profile
 router.get('/:userId', async (req, res) => {
   try {
-    const user = await User.findById(req.params.userId)
-      .select('_id displayName yapperHandle photoURL statusMode statusText createdAt')
+    const targetUserId = req.params.userId;
+    const currentUserId = req.user.userId;
+
+    const user = await User.findById(targetUserId)
+      .select('_id displayName yapperHandle photoURL statusMode statusText friendRequests friends createdAt')
       .lean();
 
     if (!user) throw new ChatError('USER_NOT_FOUND', 404, 'User not found');
 
-    res.json({ user });
+    const me = await User.findById(currentUserId).select('friends').lean();
+    const myFriendIds = (me?.friends || []).map((id) => id.toString());
+
+    const isFriend = myFriendIds.includes(targetUserId);
+    const isPending = (user.friendRequests || []).some((id) => id.toString() === currentUserId);
+
+    const [userWithLive] = await mergeLiveStatuses([user]);
+
+    res.json({
+      user: {
+        id: userWithLive._id,
+        displayName: userWithLive.displayName,
+        yapperHandle: userWithLive.yapperHandle,
+        photoURL: userWithLive.photoURL,
+        statusMode: userWithLive.statusMode,
+        statusText: userWithLive.statusText,
+        createdAt: userWithLive.createdAt,
+        isFriend,
+        isPending,
+      }
+    });
   } catch (err) {
     if (err instanceof ChatError) return res.status(err.statusCode).json({ code: err.code, message: err.message });
     res.status(500).json({ code: 'INTERNAL_ERROR', message: 'Failed to fetch user' });
@@ -96,9 +145,18 @@ router.get('/me/profile', async (req, res) => {
   try {
     const user = await User.findById(req.user.userId)
       .populate('friends', '_id displayName yapperHandle photoURL statusMode')
+      .populate('friendRequests', '_id displayName yapperHandle photoURL statusMode')
       .lean();
 
     if (!user) throw new ChatError('USER_NOT_FOUND', 404, 'User not found');
+
+    if (user.friends) {
+      user.friends = await mergeLiveStatuses(user.friends);
+    }
+    if (user.friendRequests) {
+      user.friendRequests = await mergeLiveStatuses(user.friendRequests);
+    }
+
     res.json({ user });
   } catch (err) {
     if (err instanceof ChatError) return res.status(err.statusCode).json({ code: err.code, message: err.message });
@@ -118,13 +176,27 @@ router.patch('/me/status', async (req, res) => {
         throw new ChatError('INVALID_STATUS', 400, 'Invalid status mode');
       }
       update.statusMode = statusMode;
+      if (statusMode === 'offline') {
+        update.lastSeenAt = new Date();
+      }
     }
 
     const user = await User.findByIdAndUpdate(req.user.userId, update, { new: true })
-      .select('statusText statusMode')
+      .select('statusText statusMode lastSeenAt')
       .lean();
 
-    res.json({ statusText: user.statusText, statusMode: user.statusMode });
+    if (statusMode !== undefined) {
+      const liveStatusUpdated = await setStatusMode(req.user.userId, statusMode);
+      if (liveStatusUpdated && io) {
+        const audience = await getContactRooms(req.user.userId);
+        const lastSeenAtStr = statusMode === 'offline' ? (user.lastSeenAt || new Date()).toISOString() : undefined;
+        audience.forEach((roomId) => {
+          io.to(roomId).emit('presence:update', { userId: req.user.userId, status: statusMode, lastSeenAt: lastSeenAtStr });
+        });
+      }
+    }
+
+    res.json({ statusText: user.statusText, statusMode: user.statusMode, lastSeenAt: user.lastSeenAt });
   } catch (err) {
     if (err instanceof ChatError) return res.status(err.statusCode).json({ code: err.code, message: err.message });
     res.status(500).json({ code: 'INTERNAL_ERROR', message: 'Failed to update status' });
@@ -175,6 +247,25 @@ router.post('/:userId/accept-friend', async (req, res) => {
     res.json({ message: 'Friend added' });
   } catch (err) {
     res.status(500).json({ code: 'INTERNAL_ERROR', message: 'Failed to accept request' });
+  }
+});
+
+// ─── POST /api/users/:userId/decline-friend ────────────────────────────────
+// Decline/Ignore a friend request
+router.post('/:userId/decline-friend', async (req, res) => {
+  try {
+    const requesterId = req.params.userId;
+    const currentId   = req.user.userId;
+
+    // Just remove from friendRequests list
+    await User.updateOne(
+      { _id: currentId },
+      { $pull: { friendRequests: requesterId } }
+    );
+
+    res.json({ message: 'Friend request declined' });
+  } catch (err) {
+    res.status(500).json({ code: 'INTERNAL_ERROR', message: 'Failed to decline request' });
   }
 });
 
