@@ -48,7 +48,7 @@ export default function YappersHub({ chatJwt, chatSocket, currentUserId }) {
   const stateRef   = useRef({}); // physics state per node
 
   const contactIds = zones.map((z) => z.recipientId).filter(Boolean);
-  const { getStatus } = usePresence({ chatSocket, contactIds });
+  const { getStatus, getLastSeen } = usePresence({ chatSocket, contactIds });
 
   // ── Fetch user's zones ────────────────────────────────────────────────────
   const fetchZones = () => {
