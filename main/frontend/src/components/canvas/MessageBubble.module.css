@@ -222,17 +222,18 @@
   width: fit-content;
 }
 
-/* ── Details tray (click-to-expand timings) ───────────────────── */
+/* ── Details tray (click-to-expand timings, sent messages only) ── */
 .detailsTray {
   margin-top: 8px;
-  padding-top: 8px;
+  padding: 8px 10px;
   border-top: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 0 0 10px 10px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
   font-size: 10px;
-  color: var(--color-text-secondary);
   animation: slideFadeIn 0.18s ease;
+  background: rgba(0, 0, 0, 0.15);
 }
 
 @keyframes slideFadeIn {
@@ -243,13 +244,25 @@
 .detailLine {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 12px;
 }
 
 .detailLine span:first-child {
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.5);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.4);
+  flex-shrink: 0;
 }
+
+.detailLine span:last-child {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 10px;
+  text-align: right;
+}
+
 
 /* ── Bubble + reactions column wrapper ────────────────────────── */
 .bubbleColumn {

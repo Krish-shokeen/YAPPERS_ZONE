@@ -127,7 +127,8 @@ export default function MessageBubble({ message, currentUserId, chatSocket, onVi
 
           <div
             className={`${styles.bubble} ${isSent ? styles.bubbleSent : styles.bubbleReceived}`}
-            onClick={() => setShowDetails((v) => !v)}
+            onClick={() => isSent && setShowDetails((v) => !v)}
+            style={{ cursor: isSent ? 'pointer' : 'default' }}
           >
             {/* Sender name (channels) */}
             {!isSent && message.fromDisplayName && (
@@ -152,20 +153,37 @@ export default function MessageBubble({ message, currentUserId, chatSocket, onVi
               <Tick />
             </div>
 
-            {/* Detailed Timings on Click */}
-            {showDetails && (
+            {/* Detailed Timings on Click — only shown for SENT messages */}
+            {isSent && showDetails && (
               <div className={styles.detailsTray} onClick={(e) => e.stopPropagation()}>
+                {/* Sent time */}
                 <div className={styles.detailLine}>
                   <span>Sent</span>
                   <span>{new Date(message.createdAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
                 </div>
+
+                {/* Delivered = other person's device received it (but may not have opened it) */}
                 <div className={styles.detailLine}>
                   <span>Delivered</span>
-                  <span>{message.deliveredAt ? new Date(message.deliveredAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : '—'}</span>
+                  <span>
+                    {message.deliveredAt
+                      ? new Date(message.deliveredAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })
+                      : (message.deliveryStatus === 'delivered' || message.deliveryStatus === 'read')
+                        ? 'Received'
+                        : 'Pending'}
+                  </span>
                 </div>
+
+                {/* Read = other person opened and saw the message */}
                 <div className={styles.detailLine}>
                   <span>Read</span>
-                  <span>{message.readAt ? new Date(message.readAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : message.deliveryStatus === 'read' ? 'Yes' : '—'}</span>
+                  <span>
+                    {message.readAt
+                      ? new Date(message.readAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })
+                      : message.deliveryStatus === 'read'
+                        ? 'Seen'
+                        : 'Not yet'}
+                  </span>
                 </div>
               </div>
             )}
