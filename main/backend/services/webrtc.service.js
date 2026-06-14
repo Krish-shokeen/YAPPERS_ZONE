@@ -4,9 +4,16 @@ import { v4 as uuidv4 } from 'uuid';
 let redis;
 function getRedis() {
   if (!redis) {
-    redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
-      lazyConnect: true, enableOfflineQueue: false, maxRetriesPerRequest: 1,
-    });
+    const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+    const options = {
+      lazyConnect: true,
+      enableOfflineQueue: false,
+      maxRetriesPerRequest: 1,
+    };
+    if (redisUrl.startsWith('rediss://')) {
+      options.tls = { rejectUnauthorized: false };
+    }
+    redis = new Redis(redisUrl, options);
     redis.on('error', (err) => console.error('[Redis/WebRTC]', err.message));
   }
   return redis;

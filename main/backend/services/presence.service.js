@@ -8,11 +8,16 @@ let redis;
  */
 function getRedis() {
   if (!redis) {
-    redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
+    const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+    const options = {
       lazyConnect: true,
       enableOfflineQueue: false, // don't queue commands when disconnected
       maxRetriesPerRequest: 1,
-    });
+    };
+    if (redisUrl.startsWith('rediss://')) {
+      options.tls = { rejectUnauthorized: false };
+    }
+    redis = new Redis(redisUrl, options);
 
     redis.on('error', (err) => {
       console.error('[Redis] Connection error:', err.message);
