@@ -1,22 +1,35 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 
-// Default configuration (fallback)
-const defaultFirebaseConfig = {
-  apiKey: 'AIzaSyDowsScoo5jfv-M0JI5iXopzrGrxEUAY4A',
-  authDomain: 'overyapper.firebaseapp.com',
-  projectId: 'overyapper',
-  storageBucket: 'overyapper.firebasestorage.app',
-  messagingSenderId: '1035249795606',
-  appId: '1:1035249795606:web:09c1c534de69c77df4ab37',
-  measurementId: 'G-MK7723RW8W',
+/**
+ * Firebase client configuration.
+ *
+ * ⚠️  NEVER hardcode real API keys here.
+ *     Set these values in main/frontend/.env (which is git-ignored):
+ *
+ *       VITE_FIREBASE_API_KEY=AIza...
+ *       VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+ *       VITE_FIREBASE_PROJECT_ID=your-project-id
+ *       VITE_FIREBASE_STORAGE_BUCKET=your-project.firebasestorage.app
+ *       VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
+ *       VITE_FIREBASE_APP_ID=1:123456789:web:abc123
+ *       VITE_FIREBASE_MEASUREMENT_ID=G-XXXXXXXX
+ */
+const firebaseConfig = {
+  apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId:         import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId:             import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId:     import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
 // API base URL for backend
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
-// Initialize Firebase with default config
-const app = initializeApp(defaultFirebaseConfig);
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
@@ -32,7 +45,7 @@ export const getAuthToken = async () => {
 // API helper functions
 export const apiCall = async (endpoint, options = {}) => {
   const token = await getAuthToken();
-  
+
   const config = {
     headers: {
       'Content-Type': 'application/json',
@@ -43,28 +56,11 @@ export const apiCall = async (endpoint, options = {}) => {
   };
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-  
+
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || 'API request failed');
   }
-  
+
   return response.json();
 };
-
-// Function to load Firebase config from backend (optional)
-export const loadFirebaseConfig = async () => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/config/firebase`);
-    if (response.ok) {
-      const config = await response.json();
-      console.log('Firebase config loaded from backend');
-      return config;
-    }
-  } catch (error) {
-    console.warn('Failed to load Firebase config from backend, using default:', error);
-  }
-  return defaultFirebaseConfig;
-};
-
-

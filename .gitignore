@@ -2,12 +2,23 @@
 .env
 .env.local
 .env.*.local
+main/backend/.env
+main/frontend/.env
 
-# Service Account Keys
+# Service Account Keys — NEVER commit these
 serviceAccountKey.json
 accountkey.json
 *-key.json
+*serviceAccount*.json
 *.pem
+*.p12
+*.pfx
+
+# Diagnostic/one-off scripts with credentials
+main/backend/fix-user-dates.js
+main/backend/check_db.js
+main/backend/read_transcript.js
+main/backend/redis.js
 
 # Node modules
 node_modules/
@@ -41,4 +52,4 @@ desktop.ini
 # Temporary files
 *.tmp
 *.temp
-.cache/
+.cache/

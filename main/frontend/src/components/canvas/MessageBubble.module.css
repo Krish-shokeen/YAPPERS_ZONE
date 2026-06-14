@@ -1,13 +1,16 @@
+/* ── Wrapper ──────────────────────────────────────────────────── */
 .wrapper {
   display: flex;
   align-items: flex-end;
-  gap: 8px;
-  margin: 4px 16px;
+  gap: 6px;
+  margin: 6px 16px;
 }
 
+/* Sent messages: reverse so bubble is on the right */
 .sent     { flex-direction: row-reverse; }
 .received { flex-direction: row; }
 
+/* ── Avatar (left side for received) ─────────────────────────── */
 .avatar {
   width: 28px;
   height: 28px;
@@ -21,8 +24,70 @@
   font-weight: 700;
   color: var(--color-text-primary);
   flex-shrink: 0;
+  margin-bottom: 2px;
 }
 
+/* ── Actions container: bubble + action bar side by side ─────── */
+/*
+  Layout (received):  [actionBar] [bubble]
+  Layout (sent):      [bubble] [actionBar]
+  We use flex-direction: row (received) / row-reverse (sent).
+  The action bar is always OUTSIDE the bubble, to its side.
+*/
+.actionsContainer {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  max-width: 75%;
+}
+
+.actionsReceived { flex-direction: row; }
+.actionsSent     { flex-direction: row-reverse; }
+
+/* ── Side action bar (sits next to bubble) ───────────────────── */
+.actionBar {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: var(--color-surface-2, rgba(15, 20, 35, 0.92));
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 4px 3px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+/* Show action bar when hovering the entire message wrapper */
+.wrapper:hover .actionBar {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.actionBtn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 5px;
+  border-radius: 8px;
+  transition: background 0.15s ease, transform 0.1s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.actionBtn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--color-accent-primary);
+  transform: scale(1.15);
+}
+
+/* ── Bubble ───────────────────────────────────────────────────── */
 .bubble {
   width: fit-content;
   min-width: 60px;
@@ -30,6 +95,12 @@
   padding: 10px 14px;
   border-radius: 18px;
   position: relative;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.bubble:hover {
+  filter: brightness(1.06);
 }
 
 .bubbleSent {
@@ -39,11 +110,12 @@
 }
 
 .bubbleReceived {
-  background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+  background: linear-gradient(135deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));
   border: 1px solid var(--glass-border);
   border-bottom-left-radius: 4px;
 }
 
+/* ── Sender name (channels) ───────────────────────────────────── */
 .senderName {
   font-size: 10px;
   font-weight: 600;
@@ -51,6 +123,7 @@
   margin-bottom: 3px;
 }
 
+/* ── Content ──────────────────────────────────────────────────── */
 .content {
   margin: 0;
   font-size: 13px;
@@ -65,6 +138,7 @@
   font-style: italic;
 }
 
+/* ── Footer (time + ticks) ────────────────────────────────────── */
 .footer {
   display: flex;
   align-items: center;
@@ -78,17 +152,16 @@
   color: var(--color-text-secondary);
 }
 
-.ticks { font-size: 10px; color: var(--color-text-secondary); }
+.ticks { font-size: 11px; color: var(--color-text-secondary); }
 .ticks.read { color: #00e5ff; }
 .ticks.sent { color: var(--color-text-secondary); opacity: 0.6; }
 
+/* ── Reactions (rendered BELOW the bubble, outside it) ────────── */
 .reactions {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  margin-top: 0;
-  align-self: flex-end;
-  margin-bottom: 2px;
+  margin-top: 4px;
 }
 
 .reactionChip {
@@ -99,70 +172,18 @@
   font-size: 12px;
   cursor: pointer;
   color: var(--color-text-primary);
-  transition: background 0.2s;
+  transition: background 0.2s, transform 0.1s;
 }
-.reactionChip:hover { background: rgba(255,255,255,0.1); }
-
-
-.actionsContainer {
-  position: relative;
-  display: flex;
-  align-items: flex-end;
-  max-width: 80%;
-  gap: 8px;
-  width: auto;
-}
-
-.actionsSent {
-  flex-direction: row-reverse;
-}
-
-.actionsReceived {
-  flex-direction: row;
-}
-
-.actionBar {
-  display: flex;
-  gap: 4px;
-  position: absolute;
-  top: -20px;
-  right: 8px;
-  background: var(--color-surface-2, rgba(15, 20, 35, 0.9));
-  border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  padding: 2px 4px;
-  opacity: 0;
-  transition: opacity 0.2s ease, top 0.2s ease;
-  z-index: 10;
-  pointer-events: none;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-}
-
-.wrapper:hover .actionBar {
-  opacity: 1;
-  top: -28px;
-  pointer-events: auto;
-}
-
-.actionBtn {
-  background: transparent;
-  border: none;
-  color: var(--color-text-secondary);
-  font-size: 11px;
-  cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 6px;
-  transition: background 0.2s ease, color 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.actionBtn:hover {
+.reactionChip:hover {
   background: rgba(255, 255, 255, 0.1);
-  color: var(--color-accent-primary);
+  transform: scale(1.05);
+}
+.userReacted {
+  background: rgba(0, 229, 255, 0.12);
+  border-color: rgba(0, 229, 255, 0.35);
 }
 
+/* ── Thread count ─────────────────────────────────────────────── */
 .threadCount {
   display: inline-flex;
   align-items: center;
@@ -177,22 +198,30 @@
   font-weight: 500;
   transition: color 0.2s;
 }
-
 .threadCount:hover {
   color: var(--color-accent-primary);
   text-decoration: underline;
 }
 
+/* ── Pinned indicator (inside bubble top) ─────────────────────── */
 .pinnedIndicator {
-  font-size: 10px;
-  color: #fbbf24;
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-bottom: 4px;
-  font-weight: 600;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #fbbf24;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  padding: 2px 6px;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  border-radius: 6px;
+  width: fit-content;
 }
 
+/* ── Details tray (click-to-expand timings) ───────────────────── */
 .detailsTray {
   margin-top: 8px;
   padding-top: 8px;
@@ -202,6 +231,12 @@
   gap: 4px;
   font-size: 10px;
   color: var(--color-text-secondary);
+  animation: slideFadeIn 0.18s ease;
+}
+
+@keyframes slideFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .detailLine {
@@ -211,6 +246,14 @@
 }
 
 .detailLine span:first-child {
-  font-weight: 500;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
 }
 
+/* ── Bubble + reactions column wrapper ────────────────────────── */
+.bubbleColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: inherit; /* inherits from actionsContainer direction */
+  min-width: 0;
+}

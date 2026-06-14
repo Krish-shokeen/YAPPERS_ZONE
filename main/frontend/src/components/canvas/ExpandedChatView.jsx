@@ -110,7 +110,13 @@ export default function ExpandedChatView({
     // Listen for delivery status updates (read ticks)
     const unsubStatus = chatSocket?.on('status:update', ({ messageId, status }) => {
       setMessages((prev) =>
-        prev.map((msg) => (msg.messageId === messageId ? { ...msg, deliveryStatus: status } : msg))
+        prev.map((msg) => {
+          if (msg.messageId !== messageId) return msg;
+          const updates = { deliveryStatus: status };
+          if (status === 'read' && !msg.readAt) updates.readAt = new Date().toISOString();
+          if (status === 'delivered' && !msg.deliveredAt) updates.deliveredAt = new Date().toISOString();
+          return { ...msg, ...updates };
+        })
       );
     });
 
@@ -356,7 +362,9 @@ export default function ExpandedChatView({
                         pinnedMessages.map((msg) => (
                           <div key={msg.messageId} className={styles.pinnedItem}>
                             <div className={styles.pinnedHeader}>
-                              <span className={styles.pinnedSender}>{msg.senderId?.displayName || 'User'}</span>
+                              <span className={styles.pinnedSender}>
+                                📍 {msg.fromDisplayName || msg.senderDisplayName || 'User'}
+                              </span>
                               <span className={styles.pinnedTime}>
                                 {new Date(msg.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                               </span>
@@ -367,7 +375,7 @@ export default function ExpandedChatView({
                               className={styles.unpinBtn}
                               onClick={() => chatSocket?.unpinMessage(msg.messageId)}
                             >
-                              Unpin
+                              Unpin 📌
                             </button>
                           </div>
                         ))

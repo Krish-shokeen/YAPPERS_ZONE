@@ -10,7 +10,9 @@ import styles from './MessageBubble.module.css';
  *   - Left-aligned neutral bubble for received
  *   - Delivery ticks: ✓ sent, ✓✓ delivered, ✓✓ blue = read
  *   - Decryption error inline notice
- *   - Hover action bar for reactions & thread replies
+ *   - Hover action bar to the SIDE of the bubble (not above)
+ *   - Click bubble to toggle delivery timing tray
+ *   - Reactions rendered below the bubble
  */
 export default function MessageBubble({ message, currentUserId, chatSocket, onVisible, onReact, onReply }) {
   const ref = useRef(null);
@@ -65,13 +67,19 @@ export default function MessageBubble({ message, currentUserId, chatSocket, onVi
         </div>
       )}
 
+      {/*
+        actionsContainer: flex row (received) or row-reverse (sent)
+        Children: [actionBar] [bubbleColumn]
+        For sent: row-reverse → [bubbleColumn] [actionBar]
+      */}
       <div className={`${styles.actionsContainer} ${isSent ? styles.actionsSent : styles.actionsReceived}`}>
-        {/* Action Bar (shows on hover) */}
+
+        {/* ── Side Action Bar ── */}
         <div className={styles.actionBar}>
           <button
             type="button"
             className={styles.actionBtn}
-            onClick={() => setShowPicker(!showPicker)}
+            onClick={() => setShowPicker((v) => !v)}
             title="Add reaction"
           >
             😊
@@ -94,12 +102,13 @@ export default function MessageBubble({ message, currentUserId, chatSocket, onVi
                 chatSocket?.pinMessage(message.messageId);
               }
             }}
-            title={message.isPinned ? "Unpin message" : "Pin message"}
+            title={message.isPinned ? 'Unpin message' : 'Pin message'}
           >
-            📌
+            {message.isPinned ? '📍' : '📌'}
           </button>
         </div>
 
+        {/* ── Reaction Picker (floats above action bar) ── */}
         {showPicker && (
           <ReactionPicker
             onSelect={handleReactSelect}
@@ -107,89 +116,90 @@ export default function MessageBubble({ message, currentUserId, chatSocket, onVi
           />
         )}
 
-        <div
-          className={`${styles.bubble} ${isSent ? styles.bubbleSent : styles.bubbleReceived}`}
-          onClick={() => setShowDetails(!showDetails)}
-          style={{ cursor: 'pointer' }}
-        >
+        {/* ── Bubble + reactions stacked vertically ── */}
+        <div className={styles.bubbleColumn}>
           {/* Pinned indicator */}
           {message.isPinned && (
-            <div className={styles.pinnedIndicator} title="Pinned message" onClick={(e) => e.stopPropagation()}>
-              📌 Pinned
+            <div className={styles.pinnedIndicator}>
+              📍 Pinned
             </div>
           )}
 
-          {/* Sender name (channels) */}
-          {!isSent && message.fromDisplayName && (
-            <div className={styles.senderName}>{message.fromDisplayName}</div>
-          )}
+          <div
+            className={`${styles.bubble} ${isSent ? styles.bubbleSent : styles.bubbleReceived}`}
+            onClick={() => setShowDetails((v) => !v)}
+          >
+            {/* Sender name (channels) */}
+            {!isSent && message.fromDisplayName && (
+              <div className={styles.senderName}>{message.fromDisplayName}</div>
+            )}
 
-          {/* Decryption error */}
-          {message.decryptionError ? (
-            <div className={styles.decryptError}>⚠ Could not decrypt message</div>
-          ) : (
-            <>
-              {/* Plain text content */}
-              {message.content && <p className={styles.content}>{message.content}</p>}
-            </>
-          )}
+            {/* Decryption error */}
+            {message.decryptionError ? (
+              <div className={styles.decryptError}>⚠ Could not decrypt message</div>
+            ) : (
+              <>
+                {message.content && <p className={styles.content}>{message.content}</p>}
+              </>
+            )}
 
-          <div className={styles.footer}>
-            <span className={styles.time}>
-              {new Date(message.createdAt).toLocaleTimeString([], {
-                hour: '2-digit', minute: '2-digit',
-              })}
-            </span>
-            <Tick />
+            <div className={styles.footer}>
+              <span className={styles.time}>
+                {new Date(message.createdAt).toLocaleTimeString([], {
+                  hour: '2-digit', minute: '2-digit',
+                })}
+              </span>
+              <Tick />
+            </div>
+
+            {/* Detailed Timings on Click */}
+            {showDetails && (
+              <div className={styles.detailsTray} onClick={(e) => e.stopPropagation()}>
+                <div className={styles.detailLine}>
+                  <span>Sent</span>
+                  <span>{new Date(message.createdAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
+                </div>
+                <div className={styles.detailLine}>
+                  <span>Delivered</span>
+                  <span>{message.deliveredAt ? new Date(message.deliveredAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : '—'}</span>
+                </div>
+                <div className={styles.detailLine}>
+                  <span>Read</span>
+                  <span>{message.readAt ? new Date(message.readAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : message.deliveryStatus === 'read' ? 'Yes' : '—'}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Thread Reply Count */}
+            {(message.replyCount > 0 || message.threadCount > 0) && (
+              <button
+                type="button"
+                className={styles.threadCount}
+                onClick={(e) => { e.stopPropagation(); onReply?.(message); }}
+              >
+                💬 {message.replyCount || message.threadCount} repl{(message.replyCount || message.threadCount) === 1 ? 'y' : 'ies'}
+              </button>
+            )}
           </div>
 
-          {/* Detailed Timings on Click */}
-          {showDetails && (
-            <div className={styles.detailsTray} onClick={(e) => e.stopPropagation()}>
-              <div className={styles.detailLine}>
-                <span>Sent:</span>
-                <span>{new Date(message.createdAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
-              </div>
-              <div className={styles.detailLine}>
-                <span>Delivered:</span>
-                <span>{message.deliveredAt ? new Date(message.deliveredAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'Pending'}</span>
-              </div>
-              <div className={styles.detailLine}>
-                <span>Read:</span>
-                <span>{message.readAt ? new Date(message.readAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'Unread'}</span>
-              </div>
+          {/* Reactions — below the bubble */}
+          {message.reactions?.length > 0 && (
+            <div className={styles.reactions}>
+              {message.reactions.map((r) => {
+                const userReacted = r.userIds?.some(id => id.toString() === currentUserId?.toString());
+                return (
+                  <button
+                    key={r.emoji}
+                    className={`${styles.reactionChip} ${userReacted ? styles.userReacted : ''}`}
+                    onClick={() => onReact?.(message.messageId, r.emoji)}
+                  >
+                    {r.emoji} {r.userIds?.length || 0}
+                  </button>
+                );
+              })}
             </div>
-          )}
-
-          {/* Thread Reply Count */}
-          {(message.replyCount > 0 || message.threadCount > 0) && (
-            <button
-              type="button"
-              className={styles.threadCount}
-              onClick={(e) => { e.stopPropagation(); onReply?.(message); }}
-            >
-              💬 {message.replyCount || message.threadCount} replies
-            </button>
           )}
         </div>
-
-        {/* Reactions */}
-        {message.reactions?.length > 0 && (
-          <div className={styles.reactions}>
-            {message.reactions.map((r) => {
-              const userReacted = r.userIds?.some(id => id.toString() === currentUserId?.toString());
-              return (
-                <button
-                  key={r.emoji}
-                  className={`${styles.reactionChip} ${userReacted ? styles.userReacted : ''}`}
-                  onClick={() => onReact?.(message.messageId, r.emoji)}
-                >
-                  {r.emoji} {r.userIds?.length || 0}
-                </button>
-              );
-            })}
-          </div>
-        )}
       </div>
     </div>
   );

@@ -327,10 +327,16 @@ router.get('/:channelId/pins', async (req, res) => {
       }
     }
 
-    const pins = await Message.find(query)
-      .populate('senderId', '_id displayName photoURL')
+    const rawPins = await Message.find(query)
       .sort({ createdAt: -1 })
       .lean();
+
+    // Attach fromDisplayName from the stored field (senderId is an ObjectId, not a User ref)
+    const pins = rawPins.map((msg) => ({
+      ...msg,
+      fromDisplayName: msg.fromDisplayName || msg.senderDisplayName || null,
+    }));
+
     res.json({ pins });
   } catch (err) {
     if (err instanceof ChatError) {
