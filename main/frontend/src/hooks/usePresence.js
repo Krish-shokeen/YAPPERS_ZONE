@@ -18,9 +18,9 @@ export function usePresence({ chatSocket, contactIds = [] }) {
 
   // Initial query — Requirement 5.7
   useEffect(() => {
-    if (!chatSocket?.socket?.current || contactIds.length === 0) return;
+    if (!chatSocket?.socketVal || contactIds.length === 0) return;
 
-    const socket = chatSocket.socket.current;
+    const socket = chatSocket.socketVal;
 
     // Ask the server for current statuses of all our contacts
     socket.emit('presence:query', { userIds: contactIds });
@@ -32,23 +32,34 @@ export function usePresence({ chatSocket, contactIds = [] }) {
     socket.once('presence:statuses', handleStatuses);
 
     return () => socket.off('presence:statuses', handleStatuses);
-  }, [chatSocket?.socket, contactIds.join(',')]);
+  }, [chatSocket?.socketVal, contactIds.join(',')]);
 
   // Live updates — Requirement 5.8
   useEffect(() => {
     if (!chatSocket?.on) return;
 
-    const unsub = chatSocket.on('presence:update', ({ userId, status }) => {
-      setStatuses((prev) => ({ ...prev, [userId]: status }));
+    const unsub = chatSocket.on('presence:update', ({ userId, status, lastSeenAt }) => {
+      setStatuses((prev) => ({
+        ...prev,
+        [userId]: {
+          status,
+          lastSeenAt: lastSeenAt || prev[userId]?.lastSeenAt,
+        },
+      }));
     });
 
     return unsub;
   }, [chatSocket?.on]);
 
   const getStatus = useCallback(
-    (userId) => statuses[userId] || 'offline',
+    (userId) => statuses[userId]?.status || 'offline',
     [statuses]
   );
 
-  return { statuses, getStatus };
+  const getLastSeen = useCallback(
+    (userId) => statuses[userId]?.lastSeenAt || null,
+    [statuses]
+  );
+
+  return { statuses, getStatus, getLastSeen };
 }

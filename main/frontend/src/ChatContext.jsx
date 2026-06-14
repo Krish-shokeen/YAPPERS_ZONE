@@ -55,7 +55,7 @@ export function ChatProvider({ children }) {
   useEffect(() => {
     if (!chatJwt || !userProfile) return;
 
-    const userId = userProfile.id;
+    const userId = userProfile.id || userProfile._id;
     const keys = initKeys(userId);
     setEncryptionKeys(keys);
 

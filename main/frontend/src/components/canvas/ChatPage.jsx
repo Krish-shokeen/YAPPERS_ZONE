@@ -187,7 +187,7 @@ export default function ChatPage() {
       <YappersHub
         chatJwt={chatJwt}
         chatSocket={chatSocket}
-        currentUserId={userProfile?.id}
+        currentUserId={userProfile?.id || userProfile?._id}
       />
     </>
   );

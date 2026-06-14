@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { io } from 'socket.io-client';
 import { API_BASE_URL } from '../firebaseClient';
 
@@ -22,6 +22,7 @@ const SOCKET_URL = API_BASE_URL.replace('/api', ''); // http://localhost:5000
  */
 export function useChatSocket({ chatJwt, onToast } = {}) {
   const socketRef = useRef(null);
+  const [socketVal, setSocketVal] = useState(null);
 
   useEffect(() => {
     if (!chatJwt) return;
@@ -35,6 +36,7 @@ export function useChatSocket({ chatJwt, onToast } = {}) {
     });
 
     socketRef.current = socket;
+    setSocketVal(socket);
 
     socket.on('connect', () => {
       console.log('[Socket] Connected:', socket.id);
@@ -53,6 +55,7 @@ export function useChatSocket({ chatJwt, onToast } = {}) {
     return () => {
       socket.disconnect();
       socketRef.current = null;
+      setSocketVal(null);
     };
   }, [chatJwt]); // reconnect if JWT changes
 
@@ -83,11 +86,31 @@ export function useChatSocket({ chatJwt, onToast } = {}) {
     socketRef.current?.emit(event, { conversationId });
   }, []);
 
+  const addReaction = useCallback((messageId, emoji) => {
+    socketRef.current?.emit('reaction:add', { messageId, emoji });
+  }, []);
+
+  const removeReaction = useCallback((messageId, emoji) => {
+    socketRef.current?.emit('reaction:remove', { messageId, emoji });
+  }, []);
+
+  const sendThreadReply = useCallback((parentMessageId, content, encryptedPayload = null) => {
+    socketRef.current?.emit('thread:send', { parentMessageId, content, encryptedPayload });
+  }, []);
+
+  const pinMessage = useCallback((messageId) => {
+    socketRef.current?.emit('message:pin', { messageId });
+  }, []);
+
+  const unpinMessage = useCallback((messageId) => {
+    socketRef.current?.emit('message:unpin', { messageId });
+  }, []);
+
   // Generic event subscription (for components to listen to any socket event)
   const on = useCallback((event, handler) => {
     socketRef.current?.on(event, handler);
     return () => socketRef.current?.off(event, handler);
-  }, []);
+  }, [socketVal]);
 
   const off = useCallback((event, handler) => {
     socketRef.current?.off(event, handler);
@@ -100,8 +123,14 @@ export function useChatSocket({ chatJwt, onToast } = {}) {
     leaveChannel,
     markRead,
     updateTyping,
+    addReaction,
+    removeReaction,
+    sendThreadReply,
+    pinMessage,
+    unpinMessage,
     on,
     off,
     socket: socketRef,
+    socketVal,
   };
 }
