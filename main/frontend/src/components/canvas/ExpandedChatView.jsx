@@ -168,8 +168,24 @@ export default function ExpandedChatView({
       });
       if (!res.ok) return;
       const data = await res.json();
-      setMessages((prev) => cursor ? [...data.messages, ...prev] : data.messages);
+
+      // Messages are sorted from newest to oldest in the database query.
+      // We reverse them to show older to newer from top to bottom.
+      const fetched = [...data.messages].reverse();
+
+      const container = scrollRef.current;
+      const previousScrollHeight = container ? container.scrollHeight : 0;
+
+      setMessages((prev) => cursor ? [...fetched, ...prev] : fetched);
       setHasMore(data.hasMore);
+
+      if (cursor && container) {
+        // Prevent scroll jump when prepending history
+        requestAnimationFrame(() => {
+          const newScrollHeight = container.scrollHeight;
+          container.scrollTop = container.scrollTop + (newScrollHeight - previousScrollHeight);
+        });
+      }
     } catch (err) {
       console.error('[ExpandedChat] loadHistory error:', err);
     } finally {
