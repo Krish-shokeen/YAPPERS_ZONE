@@ -89,6 +89,11 @@ export default function ExpandedChatView({
     if (!zone || !chatJwt) return;
     loadHistory(null);
 
+    // Ensure client joins the channel room to receive real-time broadcasts
+    if (zone.type === 'channel') {
+      chatSocket?.joinChannel(zone.id);
+    }
+
     // Listen for new messages
     const unsub = chatSocket?.on(
       zone.type === 'dm' ? 'dm:receive' : 'channel:message',

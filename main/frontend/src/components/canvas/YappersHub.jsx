@@ -194,6 +194,28 @@ export default function YappersHub({ chatJwt, chatSocket, currentUserId }) {
     return () => cancelAnimationFrame(rafRef.current);
   }, [zones]);
 
+  // Request system notification permission on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+    }
+  }, []);
+
+  const triggerSystemNotification = (title, body) => {
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      try {
+        new Notification(title, {
+          body,
+          icon: '/favicon.ico',
+        });
+      } catch (err) {
+        console.error('[Notification] Error triggering alert:', err);
+      }
+    }
+  };
+
   // ── React to incoming messages ───────────────────────────────────────────
   useEffect(() => {
     if (!chatSocket?.on) return;
@@ -201,13 +223,35 @@ export default function YappersHub({ chatJwt, chatSocket, currentUserId }) {
     const handleDm = (msg, ack) => {
       updateZoneActivity(msg.from, 1);
       if (typeof ack === 'function') ack();
+
+      // Notify if document is hidden or user is not in a DM with this sender
+      const isCurrentlyViewing = expandedZone?.type === 'dm' && expandedZone?.id?.toString() === msg.from?.toString();
+      if (document.hidden || !isCurrentlyViewing) {
+        triggerSystemNotification(
+          `Message from ${msg.fromDisplayName || 'Friend'}`,
+          msg.content
+        );
+      }
     };
-    const handleCh = (msg) => updateZoneActivity(msg.channelId, 1);
+
+    const handleCh = (msg) => {
+      updateZoneActivity(msg.channelId, 1);
+
+      // Notify if document is hidden or user is not in this channel
+      const isCurrentlyViewing = expandedZone?.type === 'channel' && expandedZone?.id === msg.channelId;
+      if (document.hidden || !isCurrentlyViewing) {
+        const zoneName = zones.find((z) => z.id === msg.channelId)?.name || 'Zone';
+        triggerSystemNotification(
+          `${msg.fromDisplayName || 'User'} in #${zoneName}`,
+          msg.content
+        );
+      }
+    };
 
     const u1 = chatSocket.on('dm:receive',      handleDm);
     const u2 = chatSocket.on('channel:message', handleCh);
     return () => { u1?.(); u2?.(); };
-  }, [chatSocket?.on, zones]);
+  }, [chatSocket?.on, zones, expandedZone]);
 
   function updateZoneActivity(zoneId, delta) {
     setZones((prev) => prev.map((z) =>
