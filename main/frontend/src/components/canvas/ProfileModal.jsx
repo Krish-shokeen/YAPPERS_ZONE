@@ -124,6 +124,11 @@ export default function ProfileModal({ userId, currentUserId, chatJwt, onClose, 
                   {user.statusText && (
                     <span className={styles.statusText}>— {user.statusText}</span>
                   )}
+                  {user.statusMode === 'offline' && user.lastSeenAt && (
+                    <span className={styles.statusText} style={{ opacity: 0.65, fontSize: '11px', marginLeft: '6px' }}>
+                      (Last seen {new Date(user.lastSeenAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} {new Date(user.lastSeenAt).toLocaleDateString([], { month: 'short', day: 'numeric' })})
+                    </span>
+                  )}
                 </div>
               </div>
 

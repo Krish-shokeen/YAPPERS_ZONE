@@ -1,18 +1,21 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import ReactionPicker from './ReactionPicker';
 import styles from './MessageBubble.module.css';
 
 /**
  * MessageBubble — renders a single chat message.
  *
- * Requirements 12.5, 7.9, 8.5, 9.5:
+ * Requirements 12.5, 7.9, 9.5:
  *   - Right-aligned accent bubble for sent messages
  *   - Left-aligned neutral bubble for received
  *   - Delivery ticks: ✓ sent, ✓✓ delivered, ✓✓ blue = read
- *   - Media rendering: img / video / file download
  *   - Decryption error inline notice
+ *   - Hover action bar for reactions & thread replies
  */
-export default function MessageBubble({ message, currentUserId, onVisible, onReact }) {
+export default function MessageBubble({ message, currentUserId, chatSocket, onVisible, onReact, onReply }) {
   const ref = useRef(null);
+  const [showPicker, setShowPicker] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const isSent = message.senderId?.toString() === currentUserId?.toString();
 
   // Requirement 7.4 — emit status:read when ≥50% of bubble is visible
@@ -30,7 +33,7 @@ export default function MessageBubble({ message, currentUserId, onVisible, onRea
     );
     if (ref.current) observer.observe(ref.current);
     return () => observer.disconnect();
-  }, [message.messageId, message.deliveryStatus, isSent]);
+  }, [message.messageId, message.deliveryStatus, isSent, onVisible]);
 
   // Delivery status ticks (Requirement 7.9)
   const Tick = () => {
@@ -45,6 +48,11 @@ export default function MessageBubble({ message, currentUserId, onVisible, onRea
     return <span className={`${styles.ticks} ${styles.sent}`}>✓</span>;
   };
 
+  const handleReactSelect = (emoji) => {
+    onReact?.(message.messageId, emoji);
+    setShowPicker(false);
+  };
+
   return (
     <div
       ref={ref}
@@ -57,76 +65,132 @@ export default function MessageBubble({ message, currentUserId, onVisible, onRea
         </div>
       )}
 
-      <div className={`${styles.bubble} ${isSent ? styles.bubbleSent : styles.bubbleReceived}`}>
-        {/* Sender name (channels) */}
-        {!isSent && message.fromDisplayName && (
-          <div className={styles.senderName}>{message.fromDisplayName}</div>
+      <div className={`${styles.actionsContainer} ${isSent ? styles.actionsSent : styles.actionsReceived}`}>
+        {/* Action Bar (shows on hover) */}
+        <div className={styles.actionBar}>
+          <button
+            type="button"
+            className={styles.actionBtn}
+            onClick={() => setShowPicker(!showPicker)}
+            title="Add reaction"
+          >
+            😊
+          </button>
+          <button
+            type="button"
+            className={styles.actionBtn}
+            onClick={() => onReply?.(message)}
+            title="Reply in thread"
+          >
+            💬
+          </button>
+          <button
+            type="button"
+            className={styles.actionBtn}
+            onClick={() => {
+              if (message.isPinned) {
+                chatSocket?.unpinMessage(message.messageId);
+              } else {
+                chatSocket?.pinMessage(message.messageId);
+              }
+            }}
+            title={message.isPinned ? "Unpin message" : "Pin message"}
+          >
+            📌
+          </button>
+        </div>
+
+        {showPicker && (
+          <ReactionPicker
+            onSelect={handleReactSelect}
+            onClose={() => setShowPicker(false)}
+          />
         )}
 
-        {/* Decryption error */}
-        {message.decryptionError ? (
-          <div className={styles.decryptError}>⚠ Could not decrypt message</div>
-        ) : (
-          <>
-            {/* Plain text content */}
-            {message.content && <p className={styles.content}>{message.content}</p>}
+        <div
+          className={`${styles.bubble} ${isSent ? styles.bubbleSent : styles.bubbleReceived}`}
+          onClick={() => setShowDetails(!showDetails)}
+          style={{ cursor: 'pointer' }}
+        >
+          {/* Pinned indicator */}
+          {message.isPinned && (
+            <div className={styles.pinnedIndicator} title="Pinned message" onClick={(e) => e.stopPropagation()}>
+              📌 Pinned
+            </div>
+          )}
 
-            {/* Media attachments (Requirement 8.5) */}
-            {message.mediaAttachments?.map((media) => (
-              <MediaPreview key={media.mediaId} media={media} />
-            ))}
-          </>
-        )}
+          {/* Sender name (channels) */}
+          {!isSent && message.fromDisplayName && (
+            <div className={styles.senderName}>{message.fromDisplayName}</div>
+          )}
 
-        <div className={styles.footer}>
-          <span className={styles.time}>
-            {new Date(message.createdAt).toLocaleTimeString([], {
-              hour: '2-digit', minute: '2-digit',
-            })}
-          </span>
-          <Tick />
+          {/* Decryption error */}
+          {message.decryptionError ? (
+            <div className={styles.decryptError}>⚠ Could not decrypt message</div>
+          ) : (
+            <>
+              {/* Plain text content */}
+              {message.content && <p className={styles.content}>{message.content}</p>}
+            </>
+          )}
+
+          <div className={styles.footer}>
+            <span className={styles.time}>
+              {new Date(message.createdAt).toLocaleTimeString([], {
+                hour: '2-digit', minute: '2-digit',
+              })}
+            </span>
+            <Tick />
+          </div>
+
+          {/* Detailed Timings on Click */}
+          {showDetails && (
+            <div className={styles.detailsTray} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.detailLine}>
+                <span>Sent:</span>
+                <span>{new Date(message.createdAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
+              </div>
+              <div className={styles.detailLine}>
+                <span>Delivered:</span>
+                <span>{message.deliveredAt ? new Date(message.deliveredAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'Pending'}</span>
+              </div>
+              <div className={styles.detailLine}>
+                <span>Read:</span>
+                <span>{message.readAt ? new Date(message.readAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'Unread'}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Thread Reply Count */}
+          {(message.replyCount > 0 || message.threadCount > 0) && (
+            <button
+              type="button"
+              className={styles.threadCount}
+              onClick={(e) => { e.stopPropagation(); onReply?.(message); }}
+            >
+              💬 {message.replyCount || message.threadCount} replies
+            </button>
+          )}
         </div>
 
         {/* Reactions */}
         {message.reactions?.length > 0 && (
           <div className={styles.reactions}>
-            {message.reactions.map((r) => (
-              <button
-                key={r.emoji}
-                className={styles.reactionChip}
-                onClick={() => onReact?.(message.messageId, r.emoji)}
-              >
-                {r.emoji} {r.userIds?.length || 0}
-              </button>
-            ))}
+            {message.reactions.map((r) => {
+              const userReacted = r.userIds?.some(id => id.toString() === currentUserId?.toString());
+              return (
+                <button
+                  key={r.emoji}
+                  className={`${styles.reactionChip} ${userReacted ? styles.userReacted : ''}`}
+                  onClick={() => onReact?.(message.messageId, r.emoji)}
+                >
+                  {r.emoji} {r.userIds?.length || 0}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
     </div>
-  );
-}
-
-function MediaPreview({ media }) {
-  const { mimeType, signedUrl, name } = media;
-  const isImage = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(mimeType);
-  const isVideo = ['video/mp4', 'video/webm'].includes(mimeType);
-
-  if (isImage) {
-    return (
-      <img
-        src={signedUrl}
-        alt={name}
-        className={styles.mediaImg}
-        onClick={() => window.open(signedUrl, '_blank')}
-      />
-    );
-  }
-  if (isVideo) {
-    return <video src={signedUrl} controls className={styles.mediaVideo} />;
-  }
-  return (
-    <a href={signedUrl} download={name} className={styles.mediaFile}>
-      📎 {name}
-    </a>
   );
 }

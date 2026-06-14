@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
+import ThreadPanel from './ThreadPanel';
 import { useTyping } from '../../hooks/useTyping';
 import { API_BASE_URL } from '../../firebaseClient';
 import styles from './ExpandedChatView.module.css';
@@ -22,18 +23,47 @@ export default function ExpandedChatView({
   currentUserId,
   chatJwt,
   chatSocket,
+  getStatus,
+  getLastSeen,
   onClose,
 }) {
   const [messages, setMessages]         = useState([]);
   const [hasMore, setHasMore]           = useState(false);
   const [loadingMore, setLoadingMore]   = useState(false);
   const [inputText, setInputText]       = useState('');
-  const [contextTab, setContextTab]     = useState('media'); // media | pinned | members
+  const [contextTab, setContextTab]     = useState('pinned'); // pinned | members
   const [contextOpen, setContextOpen]   = useState(true);
   const [unreadCount, setUnreadCount]   = useState(0);
   const [atBottom, setAtBottom]         = useState(true);
+  const [activeThreadParent, setActiveThreadParent] = useState(null);
+  const [pinnedMessages, setPinnedMessages] = useState([]);
+  const [loadingPins, setLoadingPins]   = useState(false);
+
   const messagesEndRef = useRef(null);
   const scrollRef      = useRef(null);
+
+  const fetchPins = useCallback(async () => {
+    if (!zone || !chatJwt) return;
+    setLoadingPins(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/channels/${zone.id}/pins`, {
+        headers: { Authorization: `Bearer ${chatJwt}` },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setPinnedMessages(data.pins || []);
+    } catch (err) {
+      console.error('[ExpandedChat] fetchPins error:', err);
+    } finally {
+      setLoadingPins(false);
+    }
+  }, [zone?.id, chatJwt]);
+
+  useEffect(() => {
+    if (contextOpen && contextTab === 'pinned') {
+      fetchPins();
+    }
+  }, [contextOpen, contextTab, fetchPins]);
 
   const { onKeyPress, stopTyping, typingUsers } = useTyping({
     chatSocket,
@@ -50,8 +80,60 @@ export default function ExpandedChatView({
       zone.type === 'dm' ? 'dm:receive' : 'channel:message',
       handleIncoming
     );
-    return () => { unsub?.(); };
-  }, [zone?.id]);
+
+    // Listen for reaction updates
+    const unsubReaction = chatSocket?.on('reaction:update', ({ messageId, reactions }) => {
+      setMessages((prev) =>
+        prev.map((msg) => (msg.messageId === messageId ? { ...msg, reactions } : msg))
+      );
+      setActiveThreadParent((parent) =>
+        parent && parent.messageId === messageId ? { ...parent, reactions } : parent
+      );
+    });
+
+    // Listen for thread replies
+    const unsubThread = chatSocket?.on('thread:message', (reply) => {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.messageId === reply.parentMessageId
+            ? { ...msg, replyCount: (msg.replyCount || 0) + 1 }
+            : msg
+        )
+      );
+      setActiveThreadParent((parent) =>
+        parent && parent.messageId === reply.parentMessageId
+          ? { ...parent, replyCount: (parent.replyCount || 0) + 1 }
+          : parent
+      );
+    });
+
+    // Listen for delivery status updates (read ticks)
+    const unsubStatus = chatSocket?.on('status:update', ({ messageId, status }) => {
+      setMessages((prev) =>
+        prev.map((msg) => (msg.messageId === messageId ? { ...msg, deliveryStatus: status } : msg))
+      );
+    });
+
+    // Listen for pin updates
+    const unsubPin = chatSocket?.on('message:pin-update', ({ messageId, isPinned }) => {
+      setMessages((prev) =>
+        prev.map((msg) => (msg.messageId === messageId ? { ...msg, isPinned } : msg))
+      );
+      if (isPinned) {
+        fetchPins();
+      } else {
+        setPinnedMessages((prev) => prev.filter((m) => m.messageId !== messageId));
+      }
+    });
+
+    return () => {
+      unsub?.();
+      unsubReaction?.();
+      unsubThread?.();
+      unsubStatus?.();
+      unsubPin?.();
+    };
+  }, [zone?.id, chatSocket?.on, fetchPins]);
 
   async function loadHistory(cursor) {
     if (!chatJwt) return;
@@ -75,7 +157,21 @@ export default function ExpandedChatView({
     }
   }
 
-  function handleIncoming(msg) {
+  function handleIncoming(msg, ack) {
+    if (typeof ack === 'function') ack();
+
+    // Verify if this message belongs to the current conversation
+    if (zone.type === 'dm') {
+      const match =
+        (msg.senderId?.toString() === zone.id?.toString() && msg.recipientId?.toString() === currentUserId?.toString()) ||
+        (msg.senderId?.toString() === currentUserId?.toString() && msg.recipientId?.toString() === zone.id?.toString()) ||
+        (msg.from?.toString() === zone.id?.toString() && msg.to?.toString() === currentUserId?.toString()) ||
+        (msg.from?.toString() === currentUserId?.toString() && msg.to?.toString() === zone.id?.toString());
+      if (!match) return;
+    } else {
+      if (msg.channelId !== zone.id) return;
+    }
+
     setMessages((prev) => [...prev, msg]);
     if (!atBottom) setUnreadCount((n) => n + 1);
     else scrollToBottom();
@@ -139,7 +235,22 @@ export default function ExpandedChatView({
         <div className={styles.header}>
           <div className={styles.headerInfo}>
             <h2 className={styles.zoneName}>{zone?.name}</h2>
-            <span className={styles.memberCount}>{zone?.memberCount} members</span>
+            {zone?.type === 'dm' ? (
+              <span className={styles.memberCount}>
+                {(() => {
+                  const status = getStatus ? getStatus(zone.recipientId) : 'offline';
+                  const lastSeen = getLastSeen ? getLastSeen(zone.recipientId) : null;
+                  const label = status === 'online' ? 'Online' : status === 'dnd' ? 'Do Not Disturb' : status === 'idle' ? 'Idle' : 'Offline';
+                  if (status === 'offline' && lastSeen) {
+                    const d = new Date(lastSeen);
+                    return `Offline · Last seen ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ${d.toLocaleDateString([], { month: 'short', day: 'numeric' })}`;
+                  }
+                  return label;
+                })()}
+              </span>
+            ) : (
+              <span className={styles.memberCount}>{zone?.memberCount} members</span>
+            )}
           </div>
           <div className={styles.headerActions}>
             <button className={styles.iconBtn} onClick={() => setContextOpen((o) => !o)} title="Toggle panel">
@@ -160,7 +271,21 @@ export default function ExpandedChatView({
                   key={msg.messageId || msg._id}
                   message={msg}
                   currentUserId={currentUserId}
+                  chatSocket={chatSocket}
                   onVisible={(id) => chatSocket?.markRead(id)}
+                  onReact={(msgId, emoji) => {
+                    const msgObj = messages.find((m) => m.messageId === msgId);
+                    const rx = msgObj?.reactions?.find((r) => r.emoji === emoji);
+                    const alreadyReacted = rx?.userIds?.some(
+                      (id) => id.toString() === currentUserId?.toString()
+                    );
+                    if (alreadyReacted) {
+                      chatSocket?.removeReaction(msgId, emoji);
+                    } else {
+                      chatSocket?.addReaction(msgId, emoji);
+                    }
+                  }}
+                  onReply={(msg) => setActiveThreadParent(msg)}
                 />
               ))}
               <div ref={messagesEndRef} />
@@ -201,7 +326,7 @@ export default function ExpandedChatView({
 
           {/* ── Context panel ─────────────────────────────────────────── */}
           <AnimatePresence>
-            {contextOpen && (
+            {contextOpen && !activeThreadParent && (
               <motion.div
                 className={`${styles.contextPanel} glass-panel`}
                 initial={{ width: 0, opacity: 0 }}
@@ -210,19 +335,45 @@ export default function ExpandedChatView({
                 transition={{ duration: 0.2 }}
               >
                 <div className={styles.contextTabs}>
-                  {['media', 'pinned', 'members'].map((tab) => (
+                  {['pinned', 'members'].map((tab) => (
                     <button
                       key={tab}
                       className={`${styles.tab} ${contextTab === tab ? styles.activeTab : ''}`}
                       onClick={() => setContextTab(tab)}
                     >
-                      {tab === 'media' ? '🖼' : tab === 'pinned' ? '📌' : '👥'}
+                      {tab === 'pinned' ? '📌' : '👥'}
                     </button>
                   ))}
                 </div>
                 <div className={styles.contextContent}>
-                  {contextTab === 'media'   && <div className={styles.placeholder}>Shared media appears here</div>}
-                  {contextTab === 'pinned'  && <div className={styles.placeholder}>Pinned messages appear here</div>}
+                  {contextTab === 'pinned' && (
+                    <div className={styles.pinnedList}>
+                      {loadingPins ? (
+                        <div className={styles.loading}>Loading pins…</div>
+                      ) : pinnedMessages.length === 0 ? (
+                        <div className={styles.placeholder}>No pinned messages yet</div>
+                      ) : (
+                        pinnedMessages.map((msg) => (
+                          <div key={msg.messageId} className={styles.pinnedItem}>
+                            <div className={styles.pinnedHeader}>
+                              <span className={styles.pinnedSender}>{msg.senderId?.displayName || 'User'}</span>
+                              <span className={styles.pinnedTime}>
+                                {new Date(msg.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                              </span>
+                            </div>
+                            <p className={styles.pinnedContent}>{msg.content}</p>
+                            <button
+                              type="button"
+                              className={styles.unpinBtn}
+                              onClick={() => chatSocket?.unpinMessage(msg.messageId)}
+                            >
+                              Unpin
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
                   {contextTab === 'members' && (
                     <div className={styles.memberList}>
                       {zone?.members?.map((m) => (
@@ -235,6 +386,19 @@ export default function ExpandedChatView({
                   )}
                 </div>
               </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* ── Thread Panel ───────────────────────────────────────────── */}
+          <AnimatePresence>
+            {activeThreadParent && (
+              <ThreadPanel
+                parentMessage={activeThreadParent}
+                currentUserId={currentUserId}
+                chatJwt={chatJwt}
+                chatSocket={chatSocket}
+                onClose={() => setActiveThreadParent(null)}
+              />
             )}
           </AnimatePresence>
         </div>
