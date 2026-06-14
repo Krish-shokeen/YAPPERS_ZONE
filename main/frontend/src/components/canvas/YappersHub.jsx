@@ -194,14 +194,48 @@ export default function YappersHub({ chatJwt, chatSocket, currentUserId }) {
     return () => cancelAnimationFrame(rafRef.current);
   }, [zones]);
 
-  // Request system notification permission on mount
+  // Request system notification permission on first user click (required by browser security policies)
   useEffect(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
       if (Notification.permission === 'default') {
-        Notification.requestPermission();
+        const handleFirstClick = () => {
+          Notification.requestPermission().then((perm) => {
+            console.log('[Notification] Permission response:', perm);
+          });
+          window.removeEventListener('click', handleFirstClick);
+        };
+        window.addEventListener('click', handleFirstClick);
+        return () => window.removeEventListener('click', handleFirstClick);
       }
     }
   }, []);
+
+  const playNotificationSound = () => {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'sine';
+      // Pleasant dual-tone chime (D5 then A5)
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+      osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.1);
+      
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start();
+      osc.stop(ctx.currentTime + 0.35);
+    } catch (err) {
+      console.warn('[Audio] Context sound blocked or failed:', err);
+    }
+  };
 
   const triggerSystemNotification = (title, body) => {
     if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
@@ -224,6 +258,12 @@ export default function YappersHub({ chatJwt, chatSocket, currentUserId }) {
       updateZoneActivity(msg.from, 1);
       if (typeof ack === 'function') ack();
 
+      // Don't notify if the message is from current user
+      const isSelf = msg.from?.toString() === currentUserId?.toString() || msg.senderId?.toString() === currentUserId?.toString();
+      if (isSelf) return;
+
+      playNotificationSound();
+
       // Notify if document is hidden or user is not in a DM with this sender
       const isCurrentlyViewing = expandedZone?.type === 'dm' && expandedZone?.id?.toString() === msg.from?.toString();
       if (document.hidden || !isCurrentlyViewing) {
@@ -236,6 +276,12 @@ export default function YappersHub({ chatJwt, chatSocket, currentUserId }) {
 
     const handleCh = (msg) => {
       updateZoneActivity(msg.channelId, 1);
+
+      // Don't notify if the message is from current user
+      const isSelf = msg.from?.toString() === currentUserId?.toString() || msg.senderId?.toString() === currentUserId?.toString();
+      if (isSelf) return;
+
+      playNotificationSound();
 
       // Notify if document is hidden or user is not in this channel
       const isCurrentlyViewing = expandedZone?.type === 'channel' && expandedZone?.id === msg.channelId;
