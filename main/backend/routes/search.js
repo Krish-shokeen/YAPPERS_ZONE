@@ -13,12 +13,11 @@ const router = express.Router();
  *   channelId    (optional) — filter to a channel
  *   fromDate     (optional) — ISO date string
  *   toDate       (optional) — ISO date string
- *   hasAttachment (optional) — 'true' to only return messages with files
  *   page         (optional) — page number, default 1
  */
 router.get('/messages', async (req, res) => {
   try {
-    const { q, sender, channelId, fromDate, toDate, hasAttachment, page } = req.query;
+    const { q, sender, channelId, fromDate, toDate, page } = req.query;
     const userId = req.user.userId;
 
     const result = await searchMessages({
@@ -28,7 +27,6 @@ router.get('/messages', async (req, res) => {
       channelId,
       fromDate,
       toDate,
-      hasAttachment: hasAttachment === 'true',
       page: parseInt(page) || 1,
     });
 

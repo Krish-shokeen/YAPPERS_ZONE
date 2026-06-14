@@ -80,6 +80,9 @@ export function registerDmHandlers(socket, io) {
       const receivePayload = {
         messageId: message.messageId,
         from: userId,
+        senderId: userId,
+        to: to,
+        recipientId: to,
         fromDisplayName: displayName,
         content: message.content,
         encryptedPayload: message.encryptedPayload,
@@ -98,13 +101,16 @@ export function registerDmHandlers(socket, io) {
           // Requirement 2.7 + 7.2 — recipient received it → update status to 'delivered'
           await updateDeliveryStatus(message.messageId, 'delivered');
 
-          // Requirement 7.3 — tell the sender their message was delivered
-          socket.emit('status:update', {
+          // Requirement 7.3 — tell the sender their message was delivered (broadcast to sender's room)
+          io.to(userId).emit('status:update', {
             messageId: message.messageId,
             status: 'delivered',
           });
         }
       });
+
+      // Also emit to the sender's room so their own message renders immediately in their open chat log
+      io.to(userId).emit('dm:receive', receivePayload);
 
       // Acknowledge the send back to the sender (lets them show the message optimistically)
       if (typeof ack === 'function') {
@@ -199,6 +205,9 @@ async function flushOfflineMessages(socket, io, userId) {
         {
           messageId: message.messageId,
           from: message.senderId.toString(),
+          senderId: message.senderId.toString(),
+          to: userId,
+          recipientId: userId,
           content: message.content,
           encryptedPayload: message.encryptedPayload,
           isEncrypted: message.isEncrypted,

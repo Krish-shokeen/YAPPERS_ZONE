@@ -3,15 +3,19 @@ import { useNavigate, Link } from 'react-router-dom';
 import { createUserWithEmailAndPassword, updateProfile, signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '../firebaseClient';
 import AuthLayout from './AuthLayout';
+import { useAuth } from '../AuthContext';
+import { PRESET_AVATARS } from '../utils/avatars.js';
 
 function SignupPage() {
   const navigate = useNavigate();
+  const { updateProfile: updateDbProfile } = useAuth();
   const [name,     setName]     = useState('');
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
   const [error,    setError]    = useState('');
   const [loading,  setLoading]  = useState(false);
   const [gLoading, setGLoading] = useState(false);
+  const [selectedAvatar, setSelectedAvatar] = useState(PRESET_AVATARS[0].url);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,7 +23,10 @@ function SignupPage() {
     setLoading(true);
     try {
       const cred = await createUserWithEmailAndPassword(auth, email, password);
-      if (name) await updateProfile(cred.user, { displayName: name });
+      // Update Firebase Profile
+      await updateProfile(cred.user, { displayName: name, photoURL: selectedAvatar });
+      // Update MongoDB Profile
+      await updateDbProfile({ displayName: name, photoURL: selectedAvatar });
       navigate('/chat');
     } catch (err) {
       setError(err.message);
@@ -86,6 +93,35 @@ function SignupPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+        </div>
+
+        <div className="ac-field">
+          <label className="ac-label">Select Cosmic Avatar</label>
+          <div style={{ display: 'flex', gap: '10px', marginTop: '8px', flexWrap: 'wrap' }}>
+            {PRESET_AVATARS.map((av) => (
+              <button
+                key={av.id}
+                type="button"
+                onClick={() => setSelectedAvatar(av.url)}
+                style={{
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '50%',
+                  border: selectedAvatar === av.url ? '2px solid #00e5ff' : '2px solid transparent',
+                  background: 'transparent',
+                  padding: '0',
+                  cursor: 'pointer',
+                  overflow: 'hidden',
+                  transition: 'all 0.2s',
+                  boxShadow: selectedAvatar === av.url ? '0 0 10px rgba(0,229,255,0.5)' : 'none',
+                  transform: selectedAvatar === av.url ? 'scale(1.1)' : 'scale(1)'
+                }}
+                title={av.name}
+              >
+                <img src={av.url} alt={av.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </button>
+            ))}
+          </div>
         </div>
 
         <button type="submit" className="ac-btn-primary" disabled={loading}>

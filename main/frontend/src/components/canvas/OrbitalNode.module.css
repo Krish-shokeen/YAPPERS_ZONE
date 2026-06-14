@@ -99,3 +99,18 @@
   pointer-events: none;
   transition: border-color 0.3s, box-shadow 0.3s;
 }
+
+.statusDot {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(8, 10, 20, 1);
+  z-index: 10;
+}
+.statusDot.online  { background: #00e5ff; box-shadow: 0 0 5px #00e5ff; }
+.statusDot.offline { background: #4a4a6a; }
+.statusDot.dnd     { background: #ff4d4d; box-shadow: 0 0 5px #ff4d4d; }
+.statusDot.idle    { background: #fbbf24; box-shadow: 0 0 5px #fbbf24; }

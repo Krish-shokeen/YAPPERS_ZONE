@@ -1,0 +1,82 @@
+.navBar {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  max-width: 90%;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  border-radius: 24px;
+  background: rgba(10, 14, 26, 0.75);
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  z-index: 100;
+}
+
+.searchWrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.searchIcon {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.searchInput {
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  width: 100%;
+  outline: none;
+}
+
+.searchInput::placeholder {
+  color: var(--color-text-secondary);
+  opacity: 0.6;
+}
+
+.filtersWrapper {
+  display: flex;
+  gap: 8px;
+}
+
+.filterTag {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 4px 12px;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filterTag:hover {
+  border-color: var(--color-accent-primary);
+  color: var(--color-accent-primary);
+  background: rgba(0, 229, 255, 0.05);
+}
+
+.activeTag {
+  background: var(--color-accent-primary);
+  color: #060810;
+  border-color: var(--color-accent-primary);
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
+}
+
+.activeTag:hover {
+  background: var(--color-accent-primary);
+  color: #060810;
+  border-color: var(--color-accent-primary);
+}

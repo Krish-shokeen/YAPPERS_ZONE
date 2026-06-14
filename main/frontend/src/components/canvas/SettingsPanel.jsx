@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../AuthContext';
 import { API_BASE_URL } from '../../firebaseClient';
+import { PRESET_AVATARS } from '../../utils/avatars.js';
 import styles from './SettingsPanel.module.css';
 
 const THEMES = [
@@ -18,7 +19,7 @@ const STATUS_OPTIONS = [
 ];
 
 export default function SettingsPanel({ chatJwt, onClose }) {
-  const { user, userProfile, logout } = useAuth();
+  const { user, userProfile, logout, updateProfile } = useAuth();
   const [tab, setTab]       = useState('profile'); // profile | appearance | notifications | security
   const [saving, setSaving] = useState(false);
   const [saved,  setSaved]  = useState(false);
@@ -28,6 +29,43 @@ export default function SettingsPanel({ chatJwt, onClose }) {
   const [displayName, setDisplayName] = useState(userProfile?.displayName || user?.displayName || '');
   const [statusText,  setStatusText]  = useState('');
   const [statusMode,  setStatusMode]  = useState('online');
+  const [photoURL, setPhotoURL] = useState(userProfile?.photoURL || user?.photoURL || PRESET_AVATARS[0].url);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file.');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image size should be less than 5MB.');
+      return;
+    }
+
+    setUploadingImage(true);
+    setError('');
+
+    try {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoURL(reader.result);
+        setUploadingImage(false);
+      };
+      reader.onerror = () => {
+        setUploadingImage(false);
+        setError('Failed to upload image. Please try again.');
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      setUploadingImage(false);
+      setError('Failed to upload image. Please try again.');
+    }
+  };
 
   // Appearance
   const [theme, setTheme] = useState(() => document.documentElement.getAttribute('data-theme') || 'nebula-blue');
@@ -41,15 +79,9 @@ export default function SettingsPanel({ chatJwt, onClose }) {
     setSaving(true);
     setError('');
     try {
-      // Update display name via existing auth route
-      if (displayName !== (userProfile?.displayName || user?.displayName)) {
-        const idToken = await user.getIdToken();
-        await fetch(`${API_BASE_URL}/auth/profile`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-          body: JSON.stringify({ displayName }),
-        });
-      }
+      // Update display name and photoURL via context updateProfile function
+      await updateProfile({ displayName, photoURL });
+
       // Update status via chat route
       if (chatJwt) {
         await fetch(`${API_BASE_URL}/users/me/status`, {
@@ -68,7 +100,6 @@ export default function SettingsPanel({ chatJwt, onClose }) {
   };
 
   const initial = (displayName || user?.email || '?')[0].toUpperCase();
-  const photoURL = userProfile?.photoURL || user?.photoURL || '';
   const handle   = userProfile?.yapperHandle || '';
 
   const TABS = [
@@ -152,6 +183,44 @@ export default function SettingsPanel({ chatJwt, onClose }) {
                         <span className={styles.previewName}>{displayName || 'Your Name'}</span>
                         {handle && <span className={styles.previewHandle}>{handle}</span>}
                         {statusText && <span className={styles.previewStatus}>{statusText}</span>}
+                      </div>
+                    </div>
+
+                    {/* Avatar Selection */}
+                    <div className={styles.formGroup}>
+                      <label className={styles.label}>Cosmic Avatar Presets</label>
+                      <div className={styles.avatarPickerGrid}>
+                        {PRESET_AVATARS.map((av) => (
+                          <button
+                            key={av.id}
+                            type="button"
+                            className={`${styles.avatarPickerBtn} ${photoURL === av.url ? styles.avatarPickerBtnActive : ''}`}
+                            onClick={() => setPhotoURL(av.url)}
+                            title={av.name}
+                          >
+                            <img src={av.url} alt={av.name} className={styles.avatarPickerImg} />
+                          </button>
+                        ))}
+                      </div>
+                      
+                      {/* Custom Upload */}
+                      <div className={styles.customUploadRow}>
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          onChange={handleImageUpload}
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                        />
+                        <button
+                          type="button"
+                          className={styles.uploadBtn}
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={uploadingImage}
+                        >
+                          {uploadingImage ? '📤 Uploading...' : '📷 Upload Custom Photo'}
+                        </button>
+                        <span className={styles.uploadHint}>Max 5MB (JPG, PNG, WebP)</span>
                       </div>
                     </div>
 

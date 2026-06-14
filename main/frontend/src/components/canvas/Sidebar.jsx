@@ -7,7 +7,7 @@ import styles from './Sidebar.module.css';
  * Contains icons for Search, New Zone, Notifications, Settings, Profile.
  * Requirement 12.7
  */
-export default function Sidebar({ onSearch, onNewZone, onSettings, onProfile }) {
+export default function Sidebar({ onSearch, onNewZone, onExplorer, onSettings, onProfile, hasNotifications, onNotifications }) {
   const { userProfile, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -51,14 +51,25 @@ export default function Sidebar({ onSearch, onNewZone, onSettings, onProfile }) 
         </svg>
       </button>
 
+      {/* Discover Zones */}
+      <button className={styles.iconBtn} title="Discover Zones" onClick={onExplorer}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5"/>
+          <polygon points="12,6 15,12 12,18 9,12" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+        </svg>
+      </button>
+
       <div className={styles.spacer} />
 
       {/* Notifications */}
-      <button className={styles.iconBtn} title="Notifications">
+      <button className={styles.iconBtn} title="Notifications" onClick={onNotifications} style={{ position: 'relative' }}>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
           <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
           <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
         </svg>
+        {hasNotifications && (
+          <span className={styles.notificationDot} />
+        )}
       </button>
 
       {/* Settings */}
@@ -78,7 +89,7 @@ export default function Sidebar({ onSearch, onNewZone, onSettings, onProfile }) 
         {userProfile?.photoURL
           ? <img src={userProfile.photoURL} alt="avatar" />
           : initial}
-        <span className={`${styles.statusDot} ${styles.online}`} />
+        <span className={`${styles.statusDot} ${styles[userProfile?.statusMode || 'online']}`} />
       </button>
     </aside>
   );

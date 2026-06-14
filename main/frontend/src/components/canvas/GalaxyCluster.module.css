@@ -1,0 +1,63 @@
+.clusterContainer {
+  position: absolute;
+  width: 0;
+  height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.label {
+  position: absolute;
+  top: -130px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-accent-secondary);
+  text-shadow: 0 0 10px rgba(123, 47, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  white-space: nowrap;
+  pointer-events: auto;
+}
+
+.orbitRing {
+  position: absolute;
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  border: 1.5px dashed rgba(123, 47, 255, 0.25);
+  box-shadow: 0 0 20px rgba(123, 47, 255, 0.05), inset 0 0 20px rgba(123, 47, 255, 0.05);
+}
+
+.spinContainer {
+  position: absolute;
+  width: 0;
+  height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: spin 35s linear infinite;
+}
+
+.nodeWrapper {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nodeCounter {
+  animation: spin-reverse 35s linear infinite;
+  pointer-events: auto;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes spin-reverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}

@@ -418,6 +418,7 @@
   border-left: 8px solid #00e5ff;
   flex-shrink: 0;
 }
+.iso-orb {
   position: absolute;
   border-radius: 50%;
   filter: blur(30px);

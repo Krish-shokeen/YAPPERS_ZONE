@@ -19,11 +19,10 @@ import mongoose from 'mongoose';
  *   channelId   (string)  — filter to a specific channel
  *   fromDate    (string)  — ISO date — messages on/after this date
  *   toDate      (string)  — ISO date — messages on/before this date
- *   hasAttachment (bool)  — only messages with media attachments
  *   page        (number)  — page number (1-based), 20 results per page
  */
 export async function searchMessages({
-  userId, q, sender, channelId, fromDate, toDate, hasAttachment, page = 1,
+  userId, q, sender, channelId, fromDate, toDate, page = 1,
 }) {
   // Requirement 10.5 — query length validation
   if (!q || q.length < 2) {
@@ -67,7 +66,6 @@ export async function searchMessages({
     if (fromDate) query.createdAt.$gte = new Date(fromDate);
     if (toDate) query.createdAt.$lte = new Date(toDate);
   }
-  if (hasAttachment) query['mediaAttachments.0'] = { $exists: true };
 
   // Execute with text score for relevance ranking (Requirement 10.1)
   const [messages, total] = await Promise.all([

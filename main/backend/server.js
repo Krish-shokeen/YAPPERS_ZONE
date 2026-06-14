@@ -7,7 +7,6 @@ import authRoutes from './routes/auth.js';
 import chatAuthRouter from './routes/chat-auth.js';
 import channelsRouter from './routes/channels.js';
 import searchRouter from './routes/search.js';
-import mediaRouter from './routes/media.js';
 import encryptionRouter from './routes/encryption.js';
 import usersRouter from './routes/users.js';
 import { initSocket } from './socket/index.js';
@@ -46,7 +45,6 @@ app.use('/api/chat', chatAuthRouter);
 // Chat REST routes — protected by Chat JWT
 app.use('/api/channels',   chatAuthMiddleware, channelsRouter);
 app.use('/api/search',     chatAuthMiddleware, searchRouter);
-app.use('/api/media',      chatAuthMiddleware, mediaRouter);
 app.use('/api/encryption', chatAuthMiddleware, encryptionRouter);
 app.use('/api/users',      chatAuthMiddleware, usersRouter);
 

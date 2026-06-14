@@ -156,6 +156,7 @@ export function registerChannelHandlers(socket, io) {
         messageId: message.messageId,
         channelId,
         from: userId,
+        senderId: userId,
         fromDisplayName: displayName,
         content: message.content,
         deliveryStatus: 'sent',

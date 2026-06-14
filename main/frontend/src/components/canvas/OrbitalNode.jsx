@@ -15,7 +15,9 @@ export default function OrbitalNode({
   position,        // { x, y } — canvas coordinates from CosmicCanvas physics
   scale = 1,
   onClick,
+  onDoubleClick,
   isSelected,
+  status,
 }) {
   const hasUnread  = zone.unreadCount > 0;
   const isActive   = zone.isActive;
@@ -37,7 +39,14 @@ export default function OrbitalNode({
       initial={{ opacity: 0, scale: 0.5 }}
       animate={{ opacity: 1, scale }}
       whileHover={{ scale: scale * 1.08 }}
-      onClick={() => onClick(zone)}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick?.(zone);
+      }}
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        onDoubleClick?.(zone);
+      }}
       title={zone.name}
       layout
     >
@@ -47,11 +56,14 @@ export default function OrbitalNode({
           <div
             key={i}
             className={styles.avatar}
-            style={{ zIndex: 3 - i, marginLeft: i > 0 ? -10 : 0 }}
+            style={{ zIndex: 3 - i, marginLeft: i > 0 ? -10 : 0, position: 'relative', overflow: 'visible' }}
           >
             {avatar.photoURL
               ? <img src={avatar.photoURL} alt={avatar.name} />
               : <span>{avatar.name?.[0]?.toUpperCase() || '?'}</span>}
+            {zone.type === 'dm' && status && (
+              <span className={`${styles.statusDot} ${styles[status]}`} />
+            )}
           </div>
         ))}
       </div>

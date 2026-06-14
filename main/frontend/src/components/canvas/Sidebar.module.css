@@ -146,3 +146,17 @@
 }
 .statusDot.online  { background: #00e5ff; box-shadow: 0 0 6px #00e5ff; }
 .statusDot.offline { background: #4a4a6a; }
+.statusDot.dnd     { background: #ff4d4d; box-shadow: 0 0 6px #ff4d4d; }
+.statusDot.idle    { background: #fbbf24; box-shadow: 0 0 6px #fbbf24; }
+
+.notificationDot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff4d4d;
+  box-shadow: 0 0 8px #ff4d4d;
+  pointer-events: none;
+}

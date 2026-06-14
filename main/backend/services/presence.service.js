@@ -81,6 +81,22 @@ export async function getStatuses(userIds) {
   return map;
 }
 
+/**
+ * setStatusMode — update the live presence status in Redis if the user is online.
+ */
+export async function setStatusMode(userId, mode) {
+  try {
+    const exists = await getRedis().exists(`presence:${userId}`);
+    if (exists) {
+      await withRetry(() => getRedis().hset(`presence:${userId}`, 'status', mode));
+      return true;
+    }
+  } catch (err) {
+    console.error('[Redis] setStatusMode error:', err.message);
+  }
+  return false;
+}
+
 // ─── Typing ───────────────────────────────────────────────────────────────────
 
 /**
