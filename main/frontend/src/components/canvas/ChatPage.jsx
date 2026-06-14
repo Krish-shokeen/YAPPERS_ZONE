@@ -88,14 +88,20 @@ function CosmicBackground() {
   );
 }
 
-/* ── Cosmic cursor — portal rendered so it always stays on top ─────────────── */
+/* ── Cosmic cursor — desktop only, hidden on touch devices ─────────────────── */
 function CosmicCursor() {
   const dotRef  = useRef(null);
   const ringRef = useRef(null);
   const pos     = useRef({ x: -100, y: -100 });
   const ring    = useRef({ x: -100, y: -100 });
 
+  // Don't render on touch devices (mobile/tablet)
+  const isTouchDevice = typeof window !== 'undefined' &&
+    (window.matchMedia('(hover: none)').matches || 'ontouchstart' in window);
+
   useEffect(() => {
+    if (isTouchDevice) return;
+
     const move = (e) => {
       pos.current.x = e.clientX;
       pos.current.y = e.clientY;
@@ -140,7 +146,9 @@ function CosmicCursor() {
       document.removeEventListener('mouseout',   onLeave, true);
       cancelAnimationFrame(raf);
     };
-  }, []);
+  }, [isTouchDevice]);
+
+  if (isTouchDevice) return null;
 
   return createPortal(
     <>
@@ -150,6 +158,7 @@ function CosmicCursor() {
     document.body
   );
 }
+
 
 export default function ChatPage() {
   const navigate = useNavigate();

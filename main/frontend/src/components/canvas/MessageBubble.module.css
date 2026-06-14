@@ -271,3 +271,42 @@
   align-items: inherit; /* inherits from actionsContainer direction */
   min-width: 0;
 }
+
+/* ── Mobile responsive ────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .wrapper {
+    margin: 4px 8px;
+    gap: 4px;
+  }
+
+  .actionsContainer {
+    max-width: 88%;
+  }
+
+  .bubble {
+    font-size: 14px;
+  }
+
+  .content {
+    font-size: 14px;
+  }
+
+  /* Bigger action buttons for thumbs */
+  .actionBtn {
+    font-size: 16px;
+    padding: 6px 7px;
+  }
+
+  .actionBar {
+    gap: 2px;
+    padding: 4px 2px;
+  }
+
+  .time {
+    font-size: 11px;
+  }
+
+  .ticks {
+    font-size: 13px;
+  }
+}

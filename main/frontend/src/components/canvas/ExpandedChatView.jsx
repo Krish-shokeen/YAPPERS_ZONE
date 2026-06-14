@@ -38,6 +38,7 @@ export default function ExpandedChatView({
   const [activeThreadParent, setActiveThreadParent] = useState(null);
   const [pinnedMessages, setPinnedMessages] = useState([]);
   const [loadingPins, setLoadingPins]   = useState(false);
+  const [initialLoad, setInitialLoad]   = useState(true);
 
   const messagesEndRef = useRef(null);
   const scrollRef      = useRef(null);
@@ -59,18 +60,31 @@ export default function ExpandedChatView({
     }
   }, [zone?.id, chatJwt]);
 
+  // Scroll to bottom on initial load
   useEffect(() => {
-    if (contextOpen && contextTab === 'pinned') {
-      fetchPins();
+    if (initialLoad && messages.length > 0) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'instant' });
+      setInitialLoad(false);
     }
-  }, [contextOpen, contextTab, fetchPins]);
+  }, [messages, initialLoad]);
+
+  // Reset initialLoad flag when zone changes
+  useEffect(() => {
+    setInitialLoad(true);
+  }, [zone?.id]);
 
   const { onKeyPress, stopTyping, typingUsers } = useTyping({
     chatSocket,
     conversationId: zone?.id,
   });
 
-  // ── Load initial history ───────────────────────────────────────────────────
+  useEffect(() => {
+    if (contextOpen && contextTab === 'pinned') {
+      fetchPins();
+    }
+  }, [contextOpen, contextTab, fetchPins]);
+
+
   useEffect(() => {
     if (!zone || !chatJwt) return;
     loadHistory(null);

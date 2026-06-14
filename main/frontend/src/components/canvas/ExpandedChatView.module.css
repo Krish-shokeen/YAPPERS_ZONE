@@ -10,6 +10,43 @@
   padding: 32px;
 }
 
+/* ── Mobile: full-screen, no padding ─────────────────────────── */
+@media (max-width: 640px) {
+  .overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 100%;
+    height: 100dvh; /* dynamic viewport height for mobile browsers */
+    border-radius: 0;
+  }
+
+  /* Hide context panel on mobile — too narrow */
+  .contextPanel {
+    display: none;
+  }
+
+  /* Bigger input for thumbs */
+  .input {
+    font-size: 16px; /* prevent iOS zoom on focus */
+    padding: 12px 14px;
+  }
+
+  .sendBtn {
+    width: 44px;
+    height: 44px;
+  }
+
+  /* Wider message bubbles */
+  .messages {
+    padding: 8px 0;
+  }
+}
+
+
 .container {
   width: 100%;
   max-width: 900px;
