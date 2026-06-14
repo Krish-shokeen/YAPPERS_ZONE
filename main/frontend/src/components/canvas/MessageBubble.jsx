@@ -106,15 +106,15 @@ export default function MessageBubble({ message, currentUserId, chatSocket, onVi
           >
             {message.isPinned ? '📍' : '📌'}
           </button>
-        </div>
 
-        {/* ── Reaction Picker (floats above action bar) ── */}
-        {showPicker && (
-          <ReactionPicker
-            onSelect={handleReactSelect}
-            onClose={() => setShowPicker(false)}
-          />
-        )}
+          {/* ── Reaction Picker — rendered inside actionBar so absolute pos is relative to it ── */}
+          {showPicker && (
+            <ReactionPicker
+              onSelect={handleReactSelect}
+              onClose={() => setShowPicker(false)}
+            />
+          )}
+        </div>
 
         {/* ── Bubble + reactions stacked vertically ── */}
         <div className={styles.bubbleColumn}>

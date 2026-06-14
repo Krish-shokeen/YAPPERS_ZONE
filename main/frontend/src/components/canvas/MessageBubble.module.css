@@ -46,6 +46,7 @@
 
 /* ── Side action bar (sits next to bubble) ───────────────────── */
 .actionBar {
+  position: relative; /* anchor for ReactionPicker absolute positioning */
   display: flex;
   flex-direction: column;
   gap: 3px;
