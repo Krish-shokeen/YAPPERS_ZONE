@@ -17,6 +17,7 @@ export default function GalaxyCluster({
   scales,
   selectedZone,
   onNodeClick,
+  onNodeDoubleClick,
 }) {
   return (
     <div
@@ -55,6 +56,7 @@ export default function GalaxyCluster({
                   scale={scales[node.id] || 1}
                   isSelected={selectedZone?.id === node.id}
                   onClick={onNodeClick}
+                  onDoubleClick={onNodeDoubleClick}
                 />
               </div>
             </div>

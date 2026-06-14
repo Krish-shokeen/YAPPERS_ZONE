@@ -333,6 +333,9 @@ export default function YappersHub({ chatJwt, chatSocket, currentUserId }) {
                 prev.map((p) => (p.id === z.id ? { ...p, unreadCount: 0 } : p))
               );
             }}
+            onNodeDoubleClick={(z) => {
+              setExpandedZone(z);
+            }}
           />
         )}
 
@@ -349,6 +352,9 @@ export default function YappersHub({ chatJwt, chatSocket, currentUserId }) {
               setZones((prev) =>
                 prev.map((p) => (p.id === z.id ? { ...p, unreadCount: 0 } : p))
               );
+            }}
+            onNodeDoubleClick={(z) => {
+              setExpandedZone(z);
             }}
           />
         )}
