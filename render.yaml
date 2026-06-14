@@ -1,0 +1,87 @@
+services:
+  # ── Backend Web Service ────────────────────────────────────────────────────
+  - type: web
+    name: yappers-backend
+    runtime: node
+    rootDir: main/backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 5000
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false # User will provide this in Render Dashboard (e.g. MongoDB Atlas Connection URI)
+      - key: JWT_SECRET
+        generateValue: true # Render will automatically generate a secure random JWT secret
+      - key: CHAT_JWT_SECRET_CURRENT
+        generateValue: true # Render will automatically generate a secure random Chat JWT secret
+      - key: CORS_ORIGIN
+        fromService:
+          name: yappers-frontend
+          type: web
+          property: url
+      - key: REDIS_URL
+        fromService:
+          name: yappers-redis
+          type: redis
+          property: connectionString
+      # Firebase Admin Private Key parameters (user provides these from their downloaded JSON key)
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY_ID
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false
+      - key: FIREBASE_CLIENT_EMAIL
+        sync: false
+      - key: FIREBASE_CLIENT_ID
+        sync: false
+      # Firebase client config served by the backend config API
+      - key: FIREBASE_API_KEY
+        sync: false
+      - key: FIREBASE_AUTH_DOMAIN
+        sync: false
+      - key: FIREBASE_STORAGE_BUCKET
+        sync: false
+      - key: FIREBASE_MESSAGING_SENDER_ID
+        sync: false
+      - key: FIREBASE_APP_ID
+        sync: false
+      - key: FIREBASE_MEASUREMENT_ID
+        sync: false
+
+  # ── Frontend Static Site ───────────────────────────────────────────────────
+  - type: web
+    name: yappers-frontend
+    runtime: static
+    rootDir: main/frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        fromService:
+          name: yappers-backend
+          type: web
+          property: url
+      # Client-side Firebase Keys required by Vite during production compilation
+      - key: VITE_FIREBASE_API_KEY
+        sync: false
+      - key: VITE_FIREBASE_AUTH_DOMAIN
+        sync: false
+      - key: VITE_FIREBASE_PROJECT_ID
+        sync: false
+      - key: VITE_FIREBASE_STORAGE_BUCKET
+        sync: false
+      - key: VITE_FIREBASE_MESSAGING_SENDER_ID
+        sync: false
+      - key: VITE_FIREBASE_APP_ID
+        sync: false
+      - key: VITE_FIREBASE_MEASUREMENT_ID
+        sync: false
+
+  # ── Redis Key-Value Service (For chat presence & typing indicators) ────────
+  - type: redis
+    name: yappers-redis
+    maxmemoryPolicy: noeviction

@@ -78,7 +78,16 @@ These are protected by Firebase security rules, not by keeping them secret.
 
 ## 🚀 Production Deployment
 
-### Environment Variables Setup
+### Option A: One-Click Render Deployment via Blueprint (Recommended)
+This repository includes a `render.yaml` blueprint that automatically configures and links the Backend API service, Frontend static site, and a Redis instance for presence tracking.
+
+1. Go to the **Render Dashboard**.
+2. Click **New** > **Blueprint**.
+3. Select your repository.
+4. Render will parse `render.yaml` and prompt you for the missing environment variables (such as `MONGODB_URI` and your Firebase keys).
+5. Click **Apply** to deploy all services.
+
+### Option B: Manual Environment Variables Setup
 
 #### Backend (e.g., Heroku, Railway, Render)
 Set these environment variables in your hosting platform:
