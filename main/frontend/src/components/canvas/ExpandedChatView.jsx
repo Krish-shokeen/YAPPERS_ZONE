@@ -31,8 +31,7 @@ export default function ExpandedChatView({
   const [hasMore, setHasMore]           = useState(false);
   const [loadingMore, setLoadingMore]   = useState(false);
   const [inputText, setInputText]       = useState('');
-  const [contextTab, setContextTab]     = useState('pinned'); // pinned | members
-  const [contextOpen, setContextOpen]   = useState(true);
+  const [showPinnedModal, setShowPinnedModal] = useState(false);
   const [unreadCount, setUnreadCount]   = useState(0);
   const [atBottom, setAtBottom]         = useState(true);
   const [activeThreadParent, setActiveThreadParent] = useState(null);
@@ -78,11 +77,12 @@ export default function ExpandedChatView({
     conversationId: zone?.id,
   });
 
+  // Fetch pins when modal opens
   useEffect(() => {
-    if (contextOpen && contextTab === 'pinned') {
+    if (showPinnedModal) {
       fetchPins();
     }
-  }, [contextOpen, contextTab, fetchPins]);
+  }, [showPinnedModal, fetchPins]);
 
 
   useEffect(() => {
@@ -273,8 +273,13 @@ export default function ExpandedChatView({
             )}
           </div>
           <div className={styles.headerActions}>
-            <button className={styles.iconBtn} onClick={() => setContextOpen((o) => !o)} title="Toggle panel">
-              ☰
+            {/* Pinned messages button */}
+            <button
+              className={`${styles.iconBtn} ${showPinnedModal ? styles.iconBtnActive : ''}`}
+              onClick={() => setShowPinnedModal((v) => !v)}
+              title="Pinned messages"
+            >
+              📌
             </button>
             <button className={styles.iconBtn} onClick={onClose} title="Close">✕</button>
           </div>
@@ -344,67 +349,52 @@ export default function ExpandedChatView({
             </form>
           </div>
 
-          {/* ── Context panel ─────────────────────────────────────────── */}
+          {/* ── Pinned Messages Modal ──────────────────────────────── */}
           <AnimatePresence>
-            {contextOpen && !activeThreadParent && (
+            {showPinnedModal && (
               <motion.div
-                className={`${styles.contextPanel} glass-panel`}
-                initial={{ width: 0, opacity: 0 }}
-                animate={{ width: 260, opacity: 1 }}
-                exit={{ width: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
+                className={styles.pinnedModal}
+                initial={{ opacity: 0, y: -10, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.97 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 350 }}
               >
-                <div className={styles.contextTabs}>
-                  {['pinned', 'members'].map((tab) => (
-                    <button
-                      key={tab}
-                      className={`${styles.tab} ${contextTab === tab ? styles.activeTab : ''}`}
-                      onClick={() => setContextTab(tab)}
-                    >
-                      {tab === 'pinned' ? '📌' : '👥'}
-                    </button>
-                  ))}
+                <div className={styles.pinnedModalHeader}>
+                  <span>📌 Pinned Messages</span>
+                  <button
+                    className={styles.iconBtn}
+                    onClick={() => setShowPinnedModal(false)}
+                  >✕</button>
                 </div>
-                <div className={styles.contextContent}>
-                  {contextTab === 'pinned' && (
-                    <div className={styles.pinnedList}>
-                      {loadingPins ? (
-                        <div className={styles.loading}>Loading pins…</div>
-                      ) : pinnedMessages.length === 0 ? (
-                        <div className={styles.placeholder}>No pinned messages yet</div>
-                      ) : (
-                        pinnedMessages.map((msg) => (
-                          <div key={msg.messageId} className={styles.pinnedItem}>
-                            <div className={styles.pinnedHeader}>
-                              <span className={styles.pinnedSender}>
-                                📍 {msg.fromDisplayName || msg.senderDisplayName || 'User'}
-                              </span>
-                              <span className={styles.pinnedTime}>
-                                {new Date(msg.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                              </span>
-                            </div>
-                            <p className={styles.pinnedContent}>{msg.content}</p>
-                            <button
-                              type="button"
-                              className={styles.unpinBtn}
-                              onClick={() => chatSocket?.unpinMessage(msg.messageId)}
-                            >
-                              Unpin 📌
-                            </button>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  )}
-                  {contextTab === 'members' && (
-                    <div className={styles.memberList}>
-                      {zone?.members?.map((m) => (
-                        <div key={m.userId} className={styles.member}>
-                          <div className={styles.memberAvatar}>{m.displayName?.[0]}</div>
-                          <span className={styles.memberName}>{m.displayName}</span>
+                <div className={styles.pinnedModalBody}>
+                  {loadingPins ? (
+                    <div className={styles.placeholder}>Loading…</div>
+                  ) : pinnedMessages.length === 0 ? (
+                    <div className={styles.placeholder}>No pinned messages yet.<br/>Hover a message and click 📌 to pin it.</div>
+                  ) : (
+                    pinnedMessages.map((msg) => (
+                      <div key={msg.messageId} className={styles.pinnedItem}>
+                        <div className={styles.pinnedHeader}>
+                          <span className={styles.pinnedSender}>
+                            {msg.fromDisplayName || msg.senderDisplayName || 'User'}
+                          </span>
+                          <span className={styles.pinnedTime}>
+                            {new Date(msg.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </span>
                         </div>
-                      ))}
-                    </div>
+                        <p className={styles.pinnedContent}>{msg.content}</p>
+                        <button
+                          type="button"
+                          className={styles.unpinBtn}
+                          onClick={() => {
+                            chatSocket?.unpinMessage(msg.messageId);
+                            setPinnedMessages((prev) => prev.filter((m) => m.messageId !== msg.messageId));
+                          }}
+                        >
+                          Unpin
+                        </button>
+                      </div>
+                    ))
                   )}
                 </div>
               </motion.div>
