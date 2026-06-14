@@ -1,7 +1,5 @@
 .container {
   position: absolute;
-  /* Appear to the right of the action bar for received, left for sent */
-  left: calc(100% + 6px);
   top: 50%;
   transform: translateY(-50%);
   z-index: 300;
@@ -44,4 +42,12 @@
 
 .emojiBtn:active {
   transform: scale(0.9);
+}
+
+.received {
+  left: calc(100% + 6px);
+}
+
+.sent {
+  right: calc(100% + 6px);
 }

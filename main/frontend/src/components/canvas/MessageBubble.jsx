@@ -112,6 +112,7 @@ export default function MessageBubble({ message, currentUserId, chatSocket, onVi
             <ReactionPicker
               onSelect={handleReactSelect}
               onClose={() => setShowPicker(false)}
+              isSent={isSent}
             />
           )}
         </div>

@@ -6,10 +6,10 @@ const EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🔥', '🎉', '👏'
 /**
  * ReactionPicker — a small glassmorphism floating picker for emojis.
  */
-export default function ReactionPicker({ onSelect, onClose }) {
+export default function ReactionPicker({ onSelect, onClose, isSent }) {
   return (
     <motion.div
-      className={`${styles.container} glass-panel`}
+      className={`${styles.container} ${isSent ? styles.sent : styles.received} glass-panel`}
       initial={{ opacity: 0, scale: 0.85 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.85 }}
