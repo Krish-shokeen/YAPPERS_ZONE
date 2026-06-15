@@ -2,7 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import ProfileDropdown from './ProfileDropdown';
+import { LogoMark } from './AuthLayout';
 import './ProfileDashboard.css';
+
 
 function ProfileDashboard() {
   const { user, userProfile, loading, updateProfile } = useAuth();
@@ -171,7 +173,7 @@ function ProfileDashboard() {
             className="logo logo-button"
             onClick={() => navigate('/')}
           >
-            <span className="logo-icon">💬</span>
+            <LogoMark size={24} />
             <span className="logo-text">Yappers Zone</span>
           </button>
           <div className="nav-buttons">

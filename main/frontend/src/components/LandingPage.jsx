@@ -83,17 +83,40 @@ function StarCanvas() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     let raf;
-    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+    
+    let mouse = { x: -1000, y: -1000 };
+    const moveMouse = (e) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+    };
+    window.addEventListener('mousemove', moveMouse, { passive: true });
+
+    const stars = Array.from({ length: 220 }, () => {
+      const sx = Math.random() * window.innerWidth;
+      const sy = Math.random() * window.innerHeight;
+      return {
+        x: sx,
+        y: sy,
+        ox: sx,
+        oy: sy,
+        r: Math.random() * 1.3 + 0.2,
+        a: Math.random(),
+        s: Math.random() * 0.004 + 0.001,
+      };
+    });
+
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      stars.forEach((s) => {
+        s.ox = Math.random() * canvas.width;
+        s.oy = Math.random() * canvas.height;
+        s.x = s.ox;
+        s.y = s.oy;
+      });
+    };
     resize();
     window.addEventListener('resize', resize);
-
-    const stars = Array.from({ length: 220 }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      r: Math.random() * 1.3 + 0.2,
-      a: Math.random(),
-      s: Math.random() * 0.004 + 0.001,
-    }));
 
     const orbs = [
       { x: 0.15, y: 0.25, r: 200, c: 'rgba(0,229,255,0.06)', s: 0.0005 },
@@ -119,10 +142,30 @@ function StarCanvas() {
         ctx.fill();
       });
 
-      // Stars
+      // Stars with gravitational warp pull
       stars.forEach((s) => {
         s.a += s.s;
         if (s.a > 1 || s.a < 0) s.s *= -1;
+
+        const dx = mouse.x - s.ox;
+        const dy = mouse.y - s.oy;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        
+        const maxDist = 280;
+        let targetX = s.ox;
+        let targetY = s.oy;
+        
+        if (dist < maxDist) {
+          const force = (maxDist - dist) / maxDist;
+          // Attract stars slightly towards cursor
+          targetX += (dx / dist) * force * 35;
+          targetY += (dy / dist) * force * 35;
+        }
+
+        // Lerping to create smooth organic wave movement
+        s.x += (targetX - s.x) * 0.08;
+        s.y += (targetY - s.y) * 0.08;
+
         ctx.beginPath();
         ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(255,255,255,${s.a * 0.65})`;
@@ -132,13 +175,57 @@ function StarCanvas() {
       raf = requestAnimationFrame(draw);
     };
     raf = requestAnimationFrame(draw);
-    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', resize); };
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', resize);
+      window.removeEventListener('mousemove', moveMouse);
+    };
   }, []);
   return <canvas ref={ref} className="lp-canvas" />;
 }
 
+/* ─── FeatureCard Component ────────────────────────────────────────────────── */
+function FeatureCard({ icon, title, desc, glowColor, children }) {
+  const ref = useRef(null);
+
+  const handleMouseMove = (e) => {
+    const card = ref.current;
+    if (!card) return;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    card.style.setProperty('--mx', `${x}px`);
+    card.style.setProperty('--my', `${y}px`);
+  };
+
+  return (
+    <div
+      ref={ref}
+      className="lp-feat-card"
+      onMouseMove={handleMouseMove}
+      data-hover
+    >
+      <div className="lp-feat-card-glow" style={{ '--gc': glowColor }} />
+      <div className="lp-feat-icon" style={{ color: glowColor }}>{icon}</div>
+      <h3 className="lp-feat-title" style={{ color: glowColor }}>{title}</h3>
+      <p className="lp-feat-desc">{desc}</p>
+      {children}
+    </div>
+  );
+}
+
 /* ─── Isometric App Mockup ──────────────────────────────────────────────────── */
 function IsoMockup() {
+  const [activeNode, setActiveNode] = useState(null);
+
+  const nodes = [
+    { id: 'center', label: 'Team Alpha', status: '8 online · Active', msg: 'hotfix is building... 🚀' },
+    { id: '1', label: 'Gaming', status: '3 yapping', msg: 'clutched that 1v3! 🤯' },
+    { id: '2', label: 'Study', status: 'Quiet focus', msg: 'reading docs for Vite 7' },
+    { id: '3', label: 'Coffee', status: '5 yappers', msg: 'highly caffeinated yaps ☕' }
+  ];
+
   return (
     <div className="iso-wrap">
       <div className="iso-scene">
@@ -175,7 +262,20 @@ function IsoMockup() {
             </div>
             {/* Canvas area with nodes */}
             <div className="iso-canvas">
-              <div className="iso-node iso-node-center">
+              {/* Glowing spatial connection lines */}
+              <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+                <line x1="171" y1="91" x2="61" y2="41" stroke="rgba(0,229,255,0.18)" strokeWidth="1.5" strokeDasharray="3 3" />
+                <line x1="171" y1="91" x2="71" y2="171" stroke="rgba(0,229,255,0.18)" strokeWidth="1.5" strokeDasharray="3 3" />
+                <line x1="171" y1="91" x2="291" y2="211" stroke="rgba(0,229,255,0.18)" strokeWidth="1.5" strokeDasharray="3 3" />
+              </svg>
+
+              {/* Node Center */}
+              <div 
+                className="iso-node iso-node-center" 
+                style={{ cursor: 'pointer' }}
+                onMouseEnter={() => setActiveNode(nodes[0])}
+                onMouseLeave={() => setActiveNode(null)}
+              >
                 <div className="iso-node-ring" />
                 <svg className="iso-node-icon" viewBox="0 0 24 24" fill="none">
                   <circle cx="12" cy="8" r="3" fill="#00e5ff"/>
@@ -186,7 +286,14 @@ function IsoMockup() {
                 </svg>
                 <span className="iso-node-label">Team Alpha</span>
               </div>
-              <div className="iso-node iso-node-1">
+
+              {/* Node 1 */}
+              <div 
+                className="iso-node iso-node-1" 
+                style={{ cursor: 'pointer' }}
+                onMouseEnter={() => setActiveNode(nodes[1])}
+                onMouseLeave={() => setActiveNode(null)}
+              >
                 <div className="iso-node-ring iso-ring-purple" />
                 <svg className="iso-node-icon" viewBox="0 0 24 24" fill="none">
                   <rect x="4" y="6" width="16" height="12" rx="2" stroke="#7b2fff" strokeWidth="1.5"/>
@@ -196,7 +303,14 @@ function IsoMockup() {
                 </svg>
                 <span className="iso-node-label">Gaming</span>
               </div>
-              <div className="iso-node iso-node-2">
+
+              {/* Node 2 */}
+              <div 
+                className="iso-node iso-node-2" 
+                style={{ cursor: 'pointer' }}
+                onMouseEnter={() => setActiveNode(nodes[2])}
+                onMouseLeave={() => setActiveNode(null)}
+              >
                 <div className="iso-node-ring iso-ring-pink" />
                 <svg className="iso-node-icon" viewBox="0 0 24 24" fill="none">
                   <rect x="4" y="4" width="12" height="16" rx="1.5" stroke="#ff6ec7" strokeWidth="1.5"/>
@@ -207,7 +321,14 @@ function IsoMockup() {
                 </svg>
                 <span className="iso-node-label">Study</span>
               </div>
-              <div className="iso-node iso-node-3">
+
+              {/* Node 3 */}
+              <div 
+                className="iso-node iso-node-3" 
+                style={{ cursor: 'pointer' }}
+                onMouseEnter={() => setActiveNode(nodes[3])}
+                onMouseLeave={() => setActiveNode(null)}
+              >
                 <div className="iso-node-ring iso-ring-purple" />
                 <svg className="iso-node-icon" viewBox="0 0 24 24" fill="none">
                   <path d="M7 4 Q7 2 12 2 Q17 2 17 4 L17 14 Q17 18 12 18 Q7 18 7 14 Z" stroke="#ffaa00" strokeWidth="1.5"/>
@@ -217,6 +338,16 @@ function IsoMockup() {
                 </svg>
                 <span className="iso-node-label">Coffee</span>
               </div>
+
+              {/* Tooltip speech bubble */}
+              {activeNode && (
+                <div className={`iso-tooltip iso-tooltip-${activeNode.id}`}>
+                  <span className="iso-tooltip-title">{activeNode.label}</span>
+                  <span className="iso-tooltip-status">{activeNode.status}</span>
+                  <p className="iso-tooltip-msg">"{activeNode.msg}"</p>
+                </div>
+              )}
+
               <div className="iso-comet-input">
                 <span>Start Yapping…</span>
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -233,44 +364,100 @@ function IsoMockup() {
 
 /* ─── Live Demo / Whisper Stream ────────────────────────────────────────────── */
 function WhisperDemo() {
-  const messages = [
-    { user: 'Krish',  color: '#00e5ff', text: 'yo the new build is live 🚀',          delay: 0 },
-    { user: 'Tarun',  color: '#7b2fff', text: 'bro it looks insane!! the nodes 🤯',    delay: 0.6 },
-    { user: 'Yash',   color: '#ff6ec7', text: 'the comet input is so smooth 👀',       delay: 1.2 },
-    { user: 'Nikhil', color: '#00ff88', text: 'already claiming my zone 😤',           delay: 1.8 },
-    { user: 'Krish',  color: '#00e5ff', text: 'hahaha zone gravity working perfectly', delay: 2.4 },
-    { user: 'Tarun',  color: '#7b2fff', text: 'typing indicator is crispy ✓✓',         delay: 3.0 },
-    { user: 'Yash',   color: '#ff6ec7', text: 'WebRTC calls next?? 📞',               delay: 3.6 },
-    { user: 'Nikhil', color: '#00ff88', text: 'LETS GOOO 🔥🔥🔥',                    delay: 4.2 },
+  const [stream, setStream] = useState([
+    { user: 'Krish',  color: '#00e5ff', text: 'yo the new build is live 🚀' },
+    { user: 'Tarun',  color: '#7b2fff', text: 'bro it looks insane!! the nodes 🤯' },
+    { user: 'Yash',   color: '#ff6ec7', text: 'the comet input is so smooth 👀' },
+  ]);
+  const [userText, setUserText] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const containerRef = useRef(null);
+
+  const mockPredefined = [
+    { user: 'Nikhil', color: '#00ff88', text: 'already claiming my zone 😤' },
+    { user: 'Krish',  color: '#00e5ff', text: 'hahaha zone gravity working perfectly' },
+    { user: 'Tarun',  color: '#7b2fff', text: 'typing indicator is crispy ✓✓' },
+    { user: 'Yash',   color: '#ff6ec7', text: 'WebRTC calls next?? 📞' },
+    { user: 'Nikhil', color: '#00ff88', text: 'LETS GOOO 🔥🔥🔥' },
   ];
+  const nextMockIndex = useRef(0);
+
+  // Auto-scroll to bottom of stream container locally (avoiding window scrolling)
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    }
+  }, [stream, isTyping]);
+
+  // Simulate incoming yaps periodically
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (nextMockIndex.current < mockPredefined.length) {
+        setIsTyping(true);
+        setTimeout(() => {
+          setStream(prev => [...prev, mockPredefined[nextMockIndex.current]]);
+          nextMockIndex.current += 1;
+          setIsTyping(false);
+        }, 1200);
+      }
+    }, 4500);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleSend = (e) => {
+    e.preventDefault();
+    if (!userText.trim()) return;
+
+    setStream(prev => [
+      ...prev,
+      { user: 'You (Yapper)', color: '#00ffff', text: userText.trim(), isUser: true }
+    ]);
+    setUserText('');
+  };
 
   return (
     <div className="demo-stream">
       <div className="demo-header">
         <div className="demo-pulse" />
-        <span>Live — Whisper Stream</span>
+        <span>Live — Whisper Stream Playground</span>
         <span className="demo-users">4 online</span>
       </div>
-      <div className="demo-messages">
-        {messages.map((m, i) => (
+      <div className="demo-messages" ref={containerRef}>
+        {stream.map((m, i) => (
           <div
             key={i}
-            className="demo-msg"
-            style={{ animationDelay: `${m.delay}s`, '--c': m.color }}
+            className={`demo-msg ${m.isUser ? 'demo-msg-user' : ''}`}
+            style={{ '--c': m.color }}
           >
             <span className="demo-user" style={{ color: m.color }}>{m.user}</span>
             <span className="demo-text">{m.text}</span>
           </div>
         ))}
+        {isTyping && (
+          <div className="demo-typing">
+            <span className="demo-typing-dots">
+              <span /><span /><span />
+            </span>
+            <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11 }}>
+              Someone is typing…
+            </span>
+          </div>
+        )}
       </div>
-      <div className="demo-typing">
-        <span className="demo-typing-dots">
-          <span /><span /><span />
-        </span>
-        <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11 }}>
-          Tarun, Yash are typing…
-        </span>
-      </div>
+      <form onSubmit={handleSend} className="demo-input-form">
+        <input
+          type="text"
+          value={userText}
+          onChange={(e) => setUserText(e.target.value)}
+          placeholder="Type something to yap..."
+          className="demo-input-field"
+          data-hover
+        />
+        <button type="submit" className="demo-send-btn" data-hover>
+          Send
+        </button>
+      </form>
     </div>
   );
 }
@@ -396,51 +583,39 @@ export default function LandingPage() {
         </p>
 
         <div className="lp-feat-grid">
-          {/* Card 1 */}
-          <div className="lp-feat-card" data-hover>
-            <div className="lp-feat-card-glow" style={{ '--gc': '#00e5ff' }} />
-            <div className="lp-feat-icon" style={{ color: '#00e5ff' }}>🌌</div>
-            <h3 className="lp-feat-title" style={{ color: '#00e5ff' }}>Activity Gravity</h3>
-            <p className="lp-feat-desc">
-              Important chats pull you in. Watch active zones physically
-              migrate to the center of your screen based on real-time
-              message velocity and typing signals.
-            </p>
+          <FeatureCard
+            icon="🌌"
+            title="Activity Gravity"
+            desc="Important chats pull you in. Watch active zones physically migrate to the center of your screen based on real-time message velocity and typing signals."
+            glowColor="#00e5ff"
+          >
             <div className="lp-feat-demo lp-demo-gravity">
               <div className="lp-gravity-node lp-gn-active">Team 🔥</div>
               <div className="lp-gravity-node lp-gn-idle">Study</div>
               <div className="lp-gravity-node lp-gn-idle lp-gn-far">Gaming</div>
               <div className="lp-gravity-arrow">← pulls toward center</div>
             </div>
-          </div>
+          </FeatureCard>
 
-          {/* Card 2 */}
-          <div className="lp-feat-card" data-hover>
-            <div className="lp-feat-card-glow" style={{ '--gc': '#7b2fff' }} />
-            <div className="lp-feat-icon" style={{ color: '#7b2fff' }}>☄️</div>
-            <h3 className="lp-feat-title" style={{ color: '#7b2fff' }}>The Comet Input</h3>
-            <p className="lp-feat-desc">
-              Context is everything. Type directly under the node you
-              are talking to. The input field docks to your zone and
-              moves with it, trailing a light stream.
-            </p>
+          <FeatureCard
+            icon="☄️"
+            title="The Comet Input"
+            desc="Context is everything. Type directly under the node you are talking to. The input field docks to your zone and moves with it, trailing a light stream."
+            glowColor="#7b2fff"
+          >
             <div className="lp-feat-demo lp-demo-comet">
               <div className="lp-comet-node">☕ Coffee Break</div>
               <div className="lp-comet-trail" />
               <div className="lp-comet-field">Start Yapping… <span>➤</span></div>
             </div>
-          </div>
+          </FeatureCard>
 
-          {/* Card 3 */}
-          <div className="lp-feat-card" data-hover>
-            <div className="lp-feat-card-glow" style={{ '--gc': '#ff6ec7' }} />
-            <div className="lp-feat-icon" style={{ color: '#ff6ec7' }}>⚡</div>
-            <h3 className="lp-feat-title" style={{ color: '#ff6ec7' }}>Zero Latency</h3>
-            <p className="lp-feat-desc">
-              Powered by Socket.io WebSockets and a Node.js engine.
-              Messages deliver in under 300 ms. Presence, typing, and
-              read receipts update in real time across all devices.
-            </p>
+          <FeatureCard
+            icon="⚡"
+            title="Zero Latency"
+            desc="Powered by Socket.io WebSockets and a Node.js engine. Messages deliver in under 300 ms. Presence, typing, and read receipts update in real time across all devices."
+            glowColor="#ff6ec7"
+          >
             <div className="lp-feat-demo lp-demo-latency">
               <div className="lp-latency-bar">
                 <span>Send</span>
@@ -452,7 +627,7 @@ export default function LandingPage() {
               </div>
               <div className="lp-latency-ticks">✓✓ read instantly</div>
             </div>
-          </div>
+          </FeatureCard>
         </div>
       </section>
 

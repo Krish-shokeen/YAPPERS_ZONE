@@ -3,6 +3,8 @@ import './LandingPage.css';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext.jsx';
 import ProfileDropdown from './ProfileDropdown';
+import { LogoMark } from './AuthLayout';
+
 
 function DashboardPage() {
   const { user, userProfile, loading } = useAuth();
@@ -41,7 +43,7 @@ function DashboardPage() {
             className="logo logo-button"
             onClick={() => navigate('/')}
           >
-            <span className="logo-icon">💬</span>
+            <LogoMark size={24} />
             <span className="logo-text">Yappers Zone</span>
           </button>
           <div className="nav-buttons">
