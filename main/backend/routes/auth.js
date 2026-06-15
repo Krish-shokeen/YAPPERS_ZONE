@@ -2,6 +2,7 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import { auth } from '../config/firebase.js';
 import User from '../models/User.js';
+import { generateOTP, sendOTPEmail, verifyOTP } from '../services/otp.service.js';
 
 const router = express.Router();
 
@@ -169,6 +170,50 @@ router.put('/profile', verifyToken, async (req, res) => {
   } catch (error) {
     console.error('Profile update error:', error);
     res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+
+// Send OTP to email
+router.post('/send-otp', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    // Check if email already registered to prevent duplicates
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ error: 'Email is already registered' });
+    }
+
+    const otp = await generateOTP(email);
+    await sendOTPEmail(email, otp);
+
+    res.json({ message: 'Verification code sent successfully' });
+  } catch (error) {
+    console.error('Send OTP error:', error);
+    res.status(500).json({ error: error.message || 'Failed to send verification code' });
+  }
+});
+
+// Verify OTP code
+router.post('/verify-otp', async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return res.status(400).json({ error: 'Email and verification code are required' });
+    }
+
+    const isValid = await verifyOTP(email, otp);
+    if (!isValid) {
+      return res.status(400).json({ error: 'Invalid or expired verification code' });
+    }
+
+    res.json({ success: true, message: 'Verification code verified successfully' });
+  } catch (error) {
+    console.error('Verify OTP error:', error);
+    res.status(500).json({ error: 'Failed to verify code' });
   }
 });
 

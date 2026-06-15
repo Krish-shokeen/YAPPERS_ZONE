@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { createUserWithEmailAndPassword, updateProfile, signInWithPopup } from 'firebase/auth';
-import { auth, googleProvider } from '../firebaseClient';
+import { auth, googleProvider, apiCall } from '../firebaseClient';
 import AuthLayout from './AuthLayout';
 import { useAuth } from '../AuthContext';
 import { PRESET_AVATARS } from '../utils/avatars.js';
@@ -16,12 +16,43 @@ function SignupPage() {
   const [loading,  setLoading]  = useState(false);
   const [gLoading, setGLoading] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState(PRESET_AVATARS[0].url);
+  const [showOtpVerify, setShowOtpVerify] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [resending, setResending] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const handleRequestOtp = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
+      await apiCall('/auth/send-otp', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      });
+      setShowOtpVerify(true);
+    } catch (err) {
+      setError(err.message || 'Failed to send verification code');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyAndSignup = async (e) => {
+    e.preventDefault();
+    if (!otp || otp.trim().length !== 6) {
+      setError('Please enter a valid 6-digit code');
+      return;
+    }
+    setError('');
+    setLoading(true);
+    try {
+      // 1. Verify code on backend
+      await apiCall('/auth/verify-otp', {
+        method: 'POST',
+        body: JSON.stringify({ email, otp: otp.trim() }),
+      });
+
+      // 2. Proceed with registration in Firebase
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       // Update Firebase Profile
       await updateProfile(cred.user, { displayName: name, photoURL: selectedAvatar });
@@ -29,9 +60,26 @@ function SignupPage() {
       await updateDbProfile({ displayName: name, photoURL: selectedAvatar });
       navigate('/chat');
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Verification failed. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setError('');
+    setResending(true);
+    try {
+      await apiCall('/auth/send-otp', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      });
+      setOtp('');
+      alert('Verification code resent successfully!');
+    } catch (err) {
+      setError(err.message || 'Failed to resend verification code');
+    } finally {
+      setResending(false);
     }
   };
 
@@ -50,95 +98,149 @@ function SignupPage() {
 
   return (
     <AuthLayout
-      title="Create your zone"
-      subtitle="Join Yappers Zone and enter the spatial canvas"
+      title={showOtpVerify ? "Verify your email" : "Create your zone"}
+      subtitle={showOtpVerify ? `Enter the 6-digit code sent to ${email}` : "Join Yappers Zone and enter the spatial canvas"}
     >
       {error && <div className="ac-error">{error}</div>}
 
-      <form className="ac-form" onSubmit={handleSubmit}>
-        <div className="ac-field">
-          <label className="ac-label" htmlFor="name">Display Name</label>
-          <input
-            id="name"
-            className="ac-input"
-            type="text"
-            placeholder="Your name"
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-        </div>
-
-        <div className="ac-field">
-          <label className="ac-label" htmlFor="email">Email</label>
-          <input
-            id="email"
-            className="ac-input"
-            type="email"
-            placeholder="you@example.com"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
-
-        <div className="ac-field">
-          <label className="ac-label" htmlFor="password">Password</label>
-          <input
-            id="password"
-            className="ac-input"
-            type="password"
-            placeholder="Create a strong password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </div>
-
-        <div className="ac-field">
-          <label className="ac-label">Select Cosmic Avatar</label>
-          <div style={{ display: 'flex', gap: '10px', marginTop: '8px', flexWrap: 'wrap' }}>
-            {PRESET_AVATARS.map((av) => (
-              <button
-                key={av.id}
-                type="button"
-                onClick={() => setSelectedAvatar(av.url)}
-                style={{
-                  width: '42px',
-                  height: '42px',
-                  borderRadius: '50%',
-                  border: selectedAvatar === av.url ? '2px solid #00e5ff' : '2px solid transparent',
-                  background: 'transparent',
-                  padding: '0',
-                  cursor: 'pointer',
-                  overflow: 'hidden',
-                  transition: 'all 0.2s',
-                  boxShadow: selectedAvatar === av.url ? '0 0 10px rgba(0,229,255,0.5)' : 'none',
-                  transform: selectedAvatar === av.url ? 'scale(1.1)' : 'scale(1)'
-                }}
-                title={av.name}
-              >
-                <img src={av.url} alt={av.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              </button>
-            ))}
+      {showOtpVerify ? (
+        <form className="ac-form" onSubmit={handleVerifyAndSignup}>
+          <div className="ac-field">
+            <label className="ac-label" htmlFor="otp">Verification Code</label>
+            <input
+              id="otp"
+              className="ac-input"
+              type="text"
+              pattern="[0-9]*"
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="e.g. 123456"
+              required
+              autoFocus
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+              style={{
+                letterSpacing: otp.length > 0 ? '4px' : 'normal',
+                textAlign: 'center',
+                fontSize: '18px',
+                fontWeight: 'bold',
+              }}
+            />
           </div>
-        </div>
 
-        <button type="submit" className="ac-btn-primary" disabled={loading}>
-          {loading ? 'Creating account…' : 'Launch Into Space →'}
-        </button>
-      </form>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button
+              type="button"
+              className="ac-btn-google"
+              style={{ margin: 0, flex: 1 }}
+              onClick={() => { setShowOtpVerify(false); setError(''); }}
+              disabled={loading}
+            >
+              ← Go Back
+            </button>
+            <button
+              type="button"
+              className="ac-btn-google"
+              style={{ margin: 0, flex: 1 }}
+              onClick={handleResendOtp}
+              disabled={loading || resending}
+            >
+              {resending ? 'Sending…' : '🔄 Resend'}
+            </button>
+          </div>
 
-      <div className="ac-divider">
-        <span className="ac-divider-line" />
-        <span className="ac-divider-text">or</span>
-        <span className="ac-divider-line" />
-      </div>
+          <button type="submit" className="ac-btn-primary" disabled={loading} style={{ marginTop: '15px' }}>
+            {loading ? 'Verifying & Registering…' : 'Verify & Launch Into Space →'}
+          </button>
+        </form>
+      ) : (
+        <>
+          <form className="ac-form" onSubmit={handleRequestOtp}>
+            <div className="ac-field">
+              <label className="ac-label" htmlFor="name">Display Name</label>
+              <input
+                id="name"
+                className="ac-input"
+                type="text"
+                placeholder="Your name"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
 
-      <button className="ac-btn-google" onClick={handleGoogle} disabled={gLoading}>
-        <GoogleIcon />
-        {gLoading ? 'Connecting…' : 'Continue with Google'}
-      </button>
+            <div className="ac-field">
+              <label className="ac-label" htmlFor="email">Email</label>
+              <input
+                id="email"
+                className="ac-input"
+                type="email"
+                placeholder="you@example.com"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+
+            <div className="ac-field">
+              <label className="ac-label" htmlFor="password">Password</label>
+              <input
+                id="password"
+                className="ac-input"
+                type="password"
+                placeholder="Create a strong password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+
+            <div className="ac-field">
+              <label className="ac-label">Select Cosmic Avatar</label>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '8px', flexWrap: 'wrap' }}>
+                {PRESET_AVATARS.map((av) => (
+                  <button
+                    key={av.id}
+                    type="button"
+                    onClick={() => setSelectedAvatar(av.url)}
+                    style={{
+                      width: '42px',
+                      height: '42px',
+                      borderRadius: '50%',
+                      border: selectedAvatar === av.url ? '2px solid #00e5ff' : '2px solid transparent',
+                      background: 'transparent',
+                      padding: '0',
+                      cursor: 'pointer',
+                      overflow: 'hidden',
+                      transition: 'all 0.2s',
+                      boxShadow: selectedAvatar === av.url ? '0 0 10px rgba(0,229,255,0.5)' : 'none',
+                      transform: selectedAvatar === av.url ? 'scale(1.1)' : 'scale(1)'
+                    }}
+                    title={av.name}
+                  >
+                    <img src={av.url} alt={av.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button type="submit" className="ac-btn-primary" disabled={loading}>
+              {loading ? 'Sending code…' : 'Launch Into Space →'}
+            </button>
+          </form>
+
+          <div className="ac-divider">
+            <span className="ac-divider-line" />
+            <span className="ac-divider-text">or</span>
+            <span className="ac-divider-line" />
+          </div>
+
+          <button className="ac-btn-google" onClick={handleGoogle} disabled={gLoading}>
+            <GoogleIcon />
+            {gLoading ? 'Connecting…' : 'Continue with Google'}
+          </button>
+        </>
+      )}
 
       <p className="ac-footer-text">
         Already have an account?{' '}
