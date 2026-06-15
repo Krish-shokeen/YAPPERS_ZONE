@@ -164,12 +164,14 @@ export default function ProfileModal({ userId, currentUserId, chatJwt, onClose, 
                      : reqState === 'pending' ? '⋯ Pending'
                      : '+ Add Friend'}
                   </button>
-                  <button
-                    className={styles.btnMessage}
-                    onClick={() => { onMessage?.(user); onClose(); }}
-                  >
-                    Message
-                  </button>
+                  {reqState === 'friends' && (
+                    <button
+                      className={styles.btnMessage}
+                      onClick={() => { onMessage?.(user); onClose(); }}
+                    >
+                      Message
+                    </button>
+                  )}
                 </div>
               )}
 
