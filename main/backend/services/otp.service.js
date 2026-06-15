@@ -58,6 +58,9 @@ export async function generateOTP(email) {
  */
 export async function sendOTPEmail(email, otp) {
   if (!process.env.SMTP_HOST) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('SMTP server configuration is missing');
+    }
     console.log(`
 ======================================================
 🔥 [DEVELOPMENT OTP DELIVERY]
@@ -110,12 +113,6 @@ export async function sendOTPEmail(email, otp) {
  */
 export async function verifyOTP(email, otp) {
   if (!email || !otp) return false;
-
-  // Development backdoor for testing
-  if (process.env.NODE_ENV === 'development' && otp.trim() === '000000') {
-    console.log(`[OTP] Development override code '000000' used for ${email}`);
-    return true;
-  }
 
   const key = `otp:${email}`;
   let match = false;
