@@ -4,6 +4,7 @@ import { ChatError } from '../chat-errors.js';
 import { getStatuses, setStatusMode } from '../services/presence.service.js';
 import { getContactRooms } from '../socket/handlers/presence.handler.js';
 import { io } from '../socket/index.js';
+import { auth } from '../config/firebase.js';
 
 const router = express.Router();
 
@@ -266,6 +267,43 @@ router.post('/:userId/decline-friend', async (req, res) => {
     res.json({ message: 'Friend request declined' });
   } catch (err) {
     res.status(500).json({ code: 'INTERNAL_ERROR', message: 'Failed to decline request' });
+  }
+});
+
+// ─── DELETE /api/users/me ──────────────────────────────────────────────────
+// Delete current user account from MongoDB and Firebase
+router.delete('/me', async (req, res) => {
+  try {
+    const currentUserId = req.user.userId;
+    const firebaseUid   = req.user.firebaseUid;
+
+    if (!currentUserId || !firebaseUid) {
+      throw new ChatError('UNAUTHORIZED', 401, 'Unauthorized access');
+    }
+
+    // 1. Delete from Firebase Authentication
+    try {
+      await auth.deleteUser(firebaseUid);
+      console.log(`[DeleteAccount] Firebase user ${firebaseUid} deleted successfully`);
+    } catch (firebaseErr) {
+      console.error(`[DeleteAccount] Failed to delete Firebase user ${firebaseUid}:`, firebaseErr.message);
+    }
+
+    // 2. Remove user from all friends lists and friendRequests lists of other users
+    await User.updateMany(
+      { $or: [ { friends: currentUserId }, { friendRequests: currentUserId } ] },
+      { $pull: { friends: currentUserId, friendRequests: currentUserId } }
+    );
+
+    // 3. Delete user document from MongoDB
+    await User.findByIdAndDelete(currentUserId);
+    console.log(`[DeleteAccount] MongoDB user ${currentUserId} deleted successfully`);
+
+    res.json({ success: true, message: 'Account deleted successfully' });
+  } catch (err) {
+    console.error('[DELETE /users/me]', err);
+    if (err instanceof ChatError) return res.status(err.statusCode).json({ code: err.code, message: err.message });
+    res.status(500).json({ code: 'INTERNAL_ERROR', message: 'Failed to delete account' });
   }
 });
 

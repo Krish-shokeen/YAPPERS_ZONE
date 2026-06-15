@@ -25,6 +25,11 @@ export default function SettingsPanel({ chatJwt, onClose }) {
   const [saved,  setSaved]  = useState(false);
   const [error,  setError]  = useState('');
 
+  // Account deletion states
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteInput, setDeleteInput] = useState('');
+  const [deleting, setDeleting] = useState(false);
+
   // Profile fields
   const [displayName, setDisplayName] = useState(userProfile?.displayName || user?.displayName || '');
   const [statusText,  setStatusText]  = useState('');
@@ -96,6 +101,26 @@ export default function SettingsPanel({ chatJwt, onClose }) {
       setError('Failed to save. Please try again.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    setError('');
+    try {
+      const res = await fetch(`${API_BASE_URL}/users/me`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${chatJwt}` }
+      });
+      if (!res.ok) {
+        throw new Error('Failed to delete account');
+      }
+      await logout();
+      onClose();
+    } catch (err) {
+      setError('Failed to delete account. Please try again.');
+      setDeleting(false);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -356,6 +381,20 @@ export default function SettingsPanel({ chatJwt, onClose }) {
                         <div className={styles.securityCardSub}>{user?.email}</div>
                       </div>
                     </div>
+
+                    {/* Danger Zone */}
+                    <div className={styles.dangerZone}>
+                      <div className={styles.dangerTitle}>Danger Zone</div>
+                      <div className={styles.dangerCard}>
+                        <div className={styles.dangerCardInfo}>
+                          <div className={styles.dangerCardTitle}>Delete Account</div>
+                          <div className={styles.dangerCardSub}>Permanently delete your account and all associated data. This action is irreversible.</div>
+                        </div>
+                        <button className={styles.deleteAccountBtn} onClick={() => setShowDeleteConfirm(true)}>
+                          Delete Account
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -364,6 +403,58 @@ export default function SettingsPanel({ chatJwt, onClose }) {
           </div>
         </div>
       </motion.div>
+
+      {/* Delete Account Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <motion.div
+            className={styles.confirmBackdrop}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className={styles.confirmCard}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+            >
+              <h3 className={styles.confirmTitle}>Delete Account</h3>
+              <p className={styles.confirmText}>
+                Are you absolutely sure you want to permanently delete your account? This action is <strong>irreversible</strong> and will delete all your settings and profile data.
+              </p>
+              <p className={styles.confirmInputLabel}>
+                Please type <strong>DELETE</strong> to confirm:
+              </p>
+              <input
+                type="text"
+                className={styles.confirmInput}
+                value={deleteInput}
+                onChange={(e) => setDeleteInput(e.target.value)}
+                placeholder="DELETE"
+                autoFocus
+              />
+              <div className={styles.confirmActions}>
+                <button
+                  className={styles.confirmCancelBtn}
+                  onClick={() => { setShowDeleteConfirm(false); setDeleteInput(''); }}
+                  disabled={deleting}
+                >
+                  Cancel
+                </button>
+                <button
+                  className={styles.confirmDeleteBtn}
+                  onClick={handleDeleteAccount}
+                  disabled={deleting || deleteInput !== 'DELETE'}
+                >
+                  {deleting ? 'Deleting...' : 'Delete Permanently'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
