@@ -3,7 +3,9 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ── Cursor ───────────────────────────────────────────────────────────────── */
-.ac-root * { cursor: none !important; }
+@media (hover: hover) and (pointer: fine) {
+  body:has(.ac-cursor-dot) * { cursor: none !important; }
+}
 
 .ac-cursor-dot {
   position: fixed;

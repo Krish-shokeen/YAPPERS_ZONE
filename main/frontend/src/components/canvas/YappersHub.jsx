@@ -42,6 +42,21 @@ export default function YappersHub({ chatJwt, chatSocket, currentUserId }) {
   const [selectedFilter, setSelectedFilter] = useState(null);
   const [friendRequests, setFriendRequests] = useState([]);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [dimensions, setDimensions]     = useState({
+    width: typeof window !== 'undefined' ? window.innerWidth : 1000,
+    height: typeof window !== 'undefined' ? window.innerHeight : 800,
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const canvasRef  = useRef(null);
   const rafRef     = useRef(null);
@@ -101,8 +116,9 @@ export default function YappersHub({ chatJwt, chatSocket, currentUserId }) {
 
   // ── Init positions (spread nodes across canvas) ───────────────────────────
   function initPositions(zoneList) {
-    const W = window.innerWidth - 64;
-    const H = window.innerHeight;
+    const isMobile = window.innerWidth <= 640;
+    const W = isMobile ? window.innerWidth : window.innerWidth - 64;
+    const H = isMobile ? window.innerHeight - 60 : window.innerHeight;
     const newPos = {};
     const newScales = {};
     const newState = {};
@@ -133,18 +149,23 @@ export default function YappersHub({ chatJwt, chatSocket, currentUserId }) {
   useEffect(() => {
     if (zones.length === 0) return;
 
-    const W = window.innerWidth - 64;
-    const H = window.innerHeight;
-    const center = { x: W / 2, y: H / 2 };
     let lastTime = performance.now();
 
     function step(now) {
+      const isMobile = window.innerWidth <= 640;
+      const W = isMobile ? window.innerWidth : window.innerWidth - 64;
+      const H = isMobile ? window.innerHeight - 60 : window.innerHeight;
+      const center = { x: W / 2, y: H / 2 };
+
       const deltaMs = now - lastTime;
       lastTime = now;
 
       const newPos = {};
       const newScales = {};
 
+      const posSpeed = 0.05;
+
+      // 1. Target lerping
       zones.forEach((zone) => {
         const s = stateRef.current[zone.id];
         if (!s) return;
@@ -177,10 +198,98 @@ export default function YappersHub({ chatJwt, chatSocket, currentUserId }) {
         s.scale += scaleDiff * Math.min(scaleSpeed, 1);
 
         // Lerp position
-        const posSpeed = s.inactiveMs >= 30000 ? 0.02 : 0.05;
         s.position.x += (s.targetPosition.x - s.position.x) * posSpeed;
         s.position.y += (s.targetPosition.y - s.position.y) * posSpeed;
+      });
 
+      // 2. Derive cluster node coordinates to act as static repellers
+      const techFocalPoint = isMobile
+        ? { x: W * 0.5, y: H * 0.32 }
+        : { x: W * 0.38, y: H * 0.48 };
+
+      const otherFocalPoint = isMobile
+        ? { x: W * 0.5, y: H * 0.68 }
+        : { x: W * 0.65, y: H * 0.52 };
+
+      const channels = zones.filter((z) => z.type === 'channel');
+      const techGalaxyNodes = channels.filter(
+        (c) =>
+          c.name.toLowerCase().includes('tech') ||
+          c.name.toLowerCase().includes('dev') ||
+          c.name.toLowerCase().includes('quantum')
+      );
+      const otherGalaxyNodes = channels.filter((c) => !techGalaxyNodes.some((tg) => tg.id === c.id));
+
+      const clusterCoords = [];
+      techGalaxyNodes.forEach((node, i) => {
+        const baseAngle = (360 / techGalaxyNodes.length) * i;
+        const angleRad = (baseAngle * Math.PI) / 180;
+        clusterCoords.push({
+          x: techFocalPoint.x + 95 * Math.cos(angleRad),
+          y: techFocalPoint.y + 95 * Math.sin(angleRad),
+        });
+      });
+      otherGalaxyNodes.forEach((node, i) => {
+        const baseAngle = (360 / otherGalaxyNodes.length) * i;
+        const angleRad = (baseAngle * Math.PI) / 180;
+        clusterCoords.push({
+          x: otherFocalPoint.x + 95 * Math.cos(angleRad),
+          y: otherFocalPoint.y + 95 * Math.sin(angleRad),
+        });
+      });
+
+      // 3. Resolve overlaps (repel from other standalone nodes)
+      const minDistance = isMobile ? 85 : 115;
+      const dms = zones.filter((z) => z.type === 'dm');
+
+      for (let i = 0; i < dms.length; i++) {
+        const idA = dms[i].id;
+        const sA = stateRef.current[idA];
+        if (!sA) continue;
+
+        // Repel from other DM nodes
+        for (let j = i + 1; j < dms.length; j++) {
+          const idB = dms[j].id;
+          const sB = stateRef.current[idB];
+          if (!sB) continue;
+
+          const dx = sB.position.x - sA.position.x;
+          const dy = sB.position.y - sA.position.y;
+          const distance = Math.sqrt(dx * dx + dy * dy) || 1;
+
+          if (distance < minDistance) {
+            const overlap = minDistance - distance;
+            const forceX = (dx / distance) * overlap * 0.5;
+            const forceY = (dy / distance) * overlap * 0.5;
+
+            sA.position.x -= forceX;
+            sA.position.y -= forceY;
+            sB.position.x += forceX;
+            sB.position.y += forceY;
+          }
+        }
+
+        // Repel from static cluster nodes
+        clusterCoords.forEach((cc) => {
+          const dx = sA.position.x - cc.x;
+          const dy = sA.position.y - cc.y;
+          const distance = Math.sqrt(dx * dx + dy * dy) || 1;
+
+          if (distance < minDistance) {
+            const overlap = minDistance - distance;
+            const forceX = (dx / distance) * overlap * 0.9;
+            const forceY = (dy / distance) * overlap * 0.9;
+
+            sA.position.x += forceX;
+            sA.position.y += forceY;
+          }
+        });
+      }
+
+      // 4. Output final positions
+      zones.forEach((zone) => {
+        const s = stateRef.current[zone.id];
+        if (!s) return;
         newPos[zone.id]    = { ...s.position };
         newScales[zone.id] = s.scale;
       });
@@ -343,10 +452,17 @@ export default function YappersHub({ chatJwt, chatSocket, currentUserId }) {
   const otherGalaxyNodes = channels.filter((c) => !techGalaxyNodes.some((tg) => tg.id === c.id));
 
   // Cluster focal points (central-to-mid region)
-  const W_width = window.innerWidth - 64;
-  const H_height = window.innerHeight;
-  const techFocalPoint = { x: W_width * 0.38, y: H_height * 0.48 };
-  const otherFocalPoint = { x: W_width * 0.65, y: H_height * 0.52 };
+  const isMobile = dimensions.width <= 640;
+  const W_width = isMobile ? dimensions.width : dimensions.width - 64;
+  const H_height = isMobile ? dimensions.height - 60 : dimensions.height;
+
+  const techFocalPoint = isMobile
+    ? { x: W_width * 0.5, y: H_height * 0.32 }
+    : { x: W_width * 0.38, y: H_height * 0.48 };
+
+  const otherFocalPoint = isMobile
+    ? { x: W_width * 0.5, y: H_height * 0.68 }
+    : { x: W_width * 0.65, y: H_height * 0.52 };
 
   // Calculate active CometInput position
   const getSelectedNodePosition = () => {
@@ -383,6 +499,18 @@ export default function YappersHub({ chatJwt, chatSocket, currentUserId }) {
     }
   };
 
+  const handleNodeClick = (z) => {
+    const isMobileDevice = dimensions.width <= 640;
+    if (isMobileDevice) {
+      setExpandedZone(z);
+    } else {
+      setActiveNode(z);
+    }
+    setZones((prev) =>
+      prev.map((p) => (p.id === z.id ? { ...p, unreadCount: 0 } : p))
+    );
+  };
+
   return (
     <div className={styles.hub}>
       <Sidebar
@@ -417,12 +545,7 @@ export default function YappersHub({ chatJwt, chatSocket, currentUserId }) {
             focalPoint={techFocalPoint}
             scales={scales}
             selectedZone={activeNode}
-            onNodeClick={(z) => {
-              setActiveNode(z);
-              setZones((prev) =>
-                prev.map((p) => (p.id === z.id ? { ...p, unreadCount: 0 } : p))
-              );
-            }}
+            onNodeClick={handleNodeClick}
             onNodeDoubleClick={(z) => {
               setExpandedZone(z);
             }}
@@ -437,12 +560,7 @@ export default function YappersHub({ chatJwt, chatSocket, currentUserId }) {
             focalPoint={otherFocalPoint}
             scales={scales}
             selectedZone={activeNode}
-            onNodeClick={(z) => {
-              setActiveNode(z);
-              setZones((prev) =>
-                prev.map((p) => (p.id === z.id ? { ...p, unreadCount: 0 } : p))
-              );
-            }}
+            onNodeClick={handleNodeClick}
             onNodeDoubleClick={(z) => {
               setExpandedZone(z);
             }}
@@ -458,12 +576,7 @@ export default function YappersHub({ chatJwt, chatSocket, currentUserId }) {
             scale={scales[zone.id] || 1}
             isSelected={activeNode?.id === zone.id}
             status={getStatus(zone.recipientId)}
-            onClick={(z) => {
-              setActiveNode(z);
-              setZones((prev) =>
-                prev.map((p) => (p.id === z.id ? { ...p, unreadCount: 0 } : p))
-              );
-            }}
+            onClick={handleNodeClick}
             onDoubleClick={(z) => {
               setExpandedZone(z);
             }}

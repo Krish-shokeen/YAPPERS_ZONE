@@ -18,6 +18,7 @@ export default function MessageBubble({ message, currentUserId, chatSocket, onVi
   const ref = useRef(null);
   const [showPicker, setShowPicker] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [showMobileActions, setShowMobileActions] = useState(false);
   const isSent = message.senderId?.toString() === currentUserId?.toString();
 
   // Requirement 7.4 — emit status:read when ≥50% of bubble is visible
@@ -53,6 +54,7 @@ export default function MessageBubble({ message, currentUserId, chatSocket, onVi
   const handleReactSelect = (emoji) => {
     onReact?.(message.messageId, emoji);
     setShowPicker(false);
+    setShowMobileActions(false); // Hide action bar after selecting reaction
   };
 
   return (
@@ -75,7 +77,7 @@ export default function MessageBubble({ message, currentUserId, chatSocket, onVi
       <div className={`${styles.actionsContainer} ${isSent ? styles.actionsSent : styles.actionsReceived}`}>
 
         {/* ── Side Action Bar ── */}
-        <div className={styles.actionBar}>
+        <div className={`${styles.actionBar} ${showMobileActions ? styles.mobileActive : ''}`}>
           <button
             type="button"
             className={styles.actionBtn}
@@ -87,7 +89,10 @@ export default function MessageBubble({ message, currentUserId, chatSocket, onVi
           <button
             type="button"
             className={styles.actionBtn}
-            onClick={() => onReply?.(message)}
+            onClick={() => {
+              onReply?.(message);
+              setShowMobileActions(false); // Hide action bar on mobile after clicking reply
+            }}
             title="Reply in thread"
           >
             💬
@@ -101,6 +106,7 @@ export default function MessageBubble({ message, currentUserId, chatSocket, onVi
               } else {
                 chatSocket?.pinMessage(message.messageId);
               }
+              setShowMobileActions(false); // Hide action bar on mobile after clicking pin
             }}
             title={message.isPinned ? 'Unpin message' : 'Pin message'}
           >
@@ -111,7 +117,10 @@ export default function MessageBubble({ message, currentUserId, chatSocket, onVi
           {showPicker && (
             <ReactionPicker
               onSelect={handleReactSelect}
-              onClose={() => setShowPicker(false)}
+              onClose={() => {
+                setShowPicker(false);
+                setShowMobileActions(false);
+              }}
               isSent={isSent}
             />
           )}
@@ -127,9 +136,16 @@ export default function MessageBubble({ message, currentUserId, chatSocket, onVi
           )}
 
           <div
-            className={`${styles.bubble} ${isSent ? styles.bubbleSent : styles.bubbleReceived}`}
-            onClick={() => isSent && setShowDetails((v) => !v)}
-            style={{ cursor: isSent ? 'pointer' : 'default' }}
+            className={`${styles.bubble} ${isSent ? styles.bubbleSent : styles.bubbleReceived} ${showMobileActions ? styles.bubbleActive : ''}`}
+            onClick={() => {
+              const isMobile = window.innerWidth <= 640;
+              if (isMobile) {
+                setShowMobileActions((v) => !v);
+              } else if (isSent) {
+                setShowDetails((v) => !v);
+              }
+            }}
+            style={{ cursor: 'pointer' }}
           >
             {/* Sender name (channels) */}
             {!isSent && message.fromDisplayName && (
@@ -155,7 +171,7 @@ export default function MessageBubble({ message, currentUserId, chatSocket, onVi
             </div>
 
             {/* Detailed Timings on Click — only shown for SENT messages */}
-            {isSent && showDetails && (
+            {isSent && (showDetails || showMobileActions) && (
               <div className={styles.detailsTray} onClick={(e) => e.stopPropagation()}>
                 {/* Sent time */}
                 <div className={styles.detailLine}>

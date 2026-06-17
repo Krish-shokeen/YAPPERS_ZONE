@@ -210,3 +210,23 @@
   color: #ff6b6b;
   text-transform: uppercase;
 }
+
+@media (max-width: 640px) {
+  .overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+  .container {
+    width: 100%;
+    max-width: 100%;
+    height: 100dvh;
+    border-radius: 0;
+  }
+  .body {
+    padding: 16px;
+    gap: 24px;
+  }
+  .cardsRow {
+    gap: 12px;
+  }
+}

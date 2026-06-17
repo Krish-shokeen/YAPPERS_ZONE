@@ -140,8 +140,9 @@
    Chat Page — Cosmic Cursor
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Hide the default cursor everywhere on the chat page */
-body:has(.chat-cursor-dot) * { cursor: none !important; }
+@media (hover: hover) and (pointer: fine) {
+  body:has(.chat-cursor-dot) * { cursor: none !important; }
+}
 
 .chat-cursor-dot {
   position: fixed;

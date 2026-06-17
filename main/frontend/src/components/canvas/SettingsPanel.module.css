@@ -445,3 +445,70 @@
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+@media (max-width: 640px) {
+  .backdrop {
+    padding: 0;
+    align-items: flex-end;
+  }
+  .panel {
+    max-height: 100dvh;
+    height: 100dvh;
+    border-radius: 0;
+    border: none;
+  }
+  .body {
+    flex-direction: column;
+  }
+  .tabs {
+    width: 100%;
+    flex-direction: row;
+    overflow-x: auto;
+    border-right: none;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding: 8px;
+    gap: 8px;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .tabBtn {
+    padding: 8px 12px;
+    white-space: nowrap;
+  }
+  .logoutBtn {
+    margin-top: 0;
+    margin-left: auto;
+  }
+  .content {
+    padding: 16px;
+  }
+  .themeGrid {
+    grid-template-columns: 1fr;
+  }
+  .statusGrid {
+    grid-template-columns: 1fr;
+  }
+  .dangerCard {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .deleteAccountBtn {
+    width: 100%;
+    text-align: center;
+  }
+  .avatarPickerGrid {
+    justify-content: center;
+  }
+  .customUploadRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .confirmCard {
+    width: 90%;
+    max-width: 90%;
+  }
+}

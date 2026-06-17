@@ -62,9 +62,21 @@
 }
 
 /* Show action bar when hovering the entire message wrapper */
-.wrapper:hover .actionBar {
-  opacity: 1;
-  pointer-events: auto;
+@media (hover: hover) and (pointer: fine) {
+  .wrapper:hover .actionBar {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .actionBtn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--color-accent-primary);
+    transform: scale(1.15);
+  }
+
+  .bubble:hover {
+    filter: brightness(1.06);
+  }
 }
 
 .actionBtn {
@@ -82,12 +94,6 @@
   line-height: 1;
 }
 
-.actionBtn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: var(--color-accent-primary);
-  transform: scale(1.15);
-}
-
 /* ── Bubble ───────────────────────────────────────────────────── */
 .bubble {
   width: fit-content;
@@ -98,10 +104,6 @@
   position: relative;
   cursor: pointer;
   transition: filter 0.15s ease;
-}
-
-.bubble:hover {
-  filter: brightness(1.06);
 }
 
 .bubbleSent {
@@ -300,6 +302,17 @@
   .actionBar {
     gap: 2px;
     padding: 4px 2px;
+  }
+
+  .actionBar.mobileActive {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  .bubbleActive {
+    filter: brightness(1.15);
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.25);
+    border-color: rgba(0, 229, 255, 0.45) !important;
   }
 
   .time {

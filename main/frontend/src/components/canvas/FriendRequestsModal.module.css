@@ -7,11 +7,17 @@
   align-items: center;
   justify-content: center;
   z-index: 100;
-  cursor: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .backdrop {
+    cursor: none;
+  }
 }
 
 .card {
   width: 380px;
+  max-width: 90%;
   max-height: 80vh;
   border-radius: 20px;
   background: rgba(10, 12, 22, 0.72);

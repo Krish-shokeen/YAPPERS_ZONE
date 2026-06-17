@@ -10,7 +10,13 @@ function CosmicCursor() {
   const pos     = useRef({ x: -100, y: -100 });
   const ring    = useRef({ x: -100, y: -100 });
 
+  // Don't render on touch devices (mobile/tablet)
+  const isTouchDevice = typeof window !== 'undefined' &&
+    (window.matchMedia('(hover: none)').matches || 'ontouchstart' in window);
+
   useEffect(() => {
+    if (isTouchDevice) return;
+
     const move = (e) => {
       pos.current.x = e.clientX;
       pos.current.y = e.clientY;
@@ -55,7 +61,9 @@ function CosmicCursor() {
       document.removeEventListener('mouseout',   onLeave, true);
       cancelAnimationFrame(raf);
     };
-  }, []);
+  }, [isTouchDevice]);
+
+  if (isTouchDevice) return null;
 
   return createPortal(
     <>

@@ -10,41 +10,6 @@
   padding: 32px;
 }
 
-/* ── Mobile: full-screen, no padding ─────────────────────────── */
-@media (max-width: 640px) {
-  .overlay {
-    padding: 0;
-    align-items: flex-end;
-  }
-
-  .container {
-    width: 100%;
-    max-width: 100%;
-    height: 100dvh;
-    border-radius: 0;
-  }
-
-  .input {
-    font-size: 16px;
-    padding: 12px 14px;
-  }
-
-  .sendBtn {
-    width: 44px;
-    height: 44px;
-  }
-
-  .messages {
-    padding: 8px 0;
-  }
-
-  /* Pinned modal full width on mobile */
-  .pinnedModal {
-    left: 8px !important;
-    right: 8px !important;
-    width: auto !important;
-  }
-}
 
 .container {
   width: 100%;
@@ -256,4 +221,60 @@
 .unpinBtn:hover {
   background: rgba(255, 77, 77, 0.15);
   border-color: rgba(255, 77, 77, 0.6);
+}
+
+.backBtn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+  border-radius: 50%;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.backBtn:hover {
+  background: var(--color-surface-1);
+}
+
+/* ── Mobile: full-screen, no padding ─────────────────────────── */
+@media (max-width: 640px) {
+  .overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 100%;
+    height: 100dvh;
+    border-radius: 0;
+    background: #060810 !important; /* solid deep dark background for readability on mobile */
+  }
+
+  .input {
+    font-size: 16px;
+    padding: 12px 14px;
+  }
+
+  .sendBtn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .messages {
+    padding: 8px 0;
+  }
+
+  /* Pinned modal full width on mobile */
+  .pinnedModal {
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+  }
 }

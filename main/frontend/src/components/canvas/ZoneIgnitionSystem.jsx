@@ -164,7 +164,7 @@ export default function ZoneIgnitionSystem({ chatJwt, onClose, onSuccess }) {
           <button className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
 
-        <div className={styles.body}>
+        <div className={styles.body} data-step={step}>
           {/* Panel 1: Left Form Panel */}
           <div className={`${styles.panel} ${styles.leftPanel}`}>
             <h3>Configuration</h3>

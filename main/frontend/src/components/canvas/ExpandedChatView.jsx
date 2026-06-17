@@ -38,6 +38,13 @@ export default function ExpandedChatView({
   const [pinnedMessages, setPinnedMessages] = useState([]);
   const [loadingPins, setLoadingPins]   = useState(false);
   const [initialLoad, setInitialLoad]   = useState(true);
+  const [isMobile, setIsMobile]         = useState(typeof window !== 'undefined' && window.innerWidth <= 640);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 640);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const messagesEndRef = useRef(null);
   const scrollRef      = useRef(null);
@@ -257,6 +264,20 @@ export default function ExpandedChatView({
     }
   }
 
+  const animVariants = isMobile
+    ? {
+        initial: { x: '100%' },
+        animate: { x: 0 },
+        exit: { x: '100%' },
+        transition: { type: 'spring', damping: 30, stiffness: 350 },
+      }
+    : {
+        initial: { scale: 0.9, opacity: 0 },
+        animate: { scale: 1, opacity: 1 },
+        exit: { scale: 0.9, opacity: 0 },
+        transition: { type: 'spring', damping: 25, stiffness: 300 },
+      };
+
   return (
     <motion.div
       className={styles.overlay}
@@ -267,13 +288,20 @@ export default function ExpandedChatView({
     >
       <motion.div
         className={`${styles.container} glass-panel`}
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+        initial={animVariants.initial}
+        animate={animVariants.animate}
+        exit={animVariants.exit}
+        transition={animVariants.transition}
       >
         {/* ── Header ────────────────────────────────────────────────────── */}
         <div className={styles.header}>
+          {isMobile && (
+            <button className={styles.backBtn} onClick={onClose} title="Back">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          )}
           <div className={styles.headerInfo}>
             <h2 className={styles.zoneName}>{zone?.name}</h2>
             {zone?.type === 'dm' ? (
@@ -302,7 +330,9 @@ export default function ExpandedChatView({
             >
               📌
             </button>
-            <button className={styles.iconBtn} onClick={onClose} title="Close">✕</button>
+            {!isMobile && (
+              <button className={styles.iconBtn} onClick={onClose} title="Close">✕</button>
+            )}
           </div>
         </div>
 
@@ -321,13 +351,25 @@ export default function ExpandedChatView({
                   onVisible={(id) => chatSocket?.markRead(id)}
                   onReact={(msgId, emoji) => {
                     const msgObj = messages.find((m) => m.messageId === msgId);
-                    const rx = msgObj?.reactions?.find((r) => r.emoji === emoji);
-                    const alreadyReacted = rx?.userIds?.some(
-                      (id) => id.toString() === currentUserId?.toString()
-                    );
-                    if (alreadyReacted) {
+                    if (!msgObj) return;
+
+                    // Find if the user has already reacted with any emoji on this message
+                    const userExistingReactions = [];
+                    msgObj.reactions?.forEach((r) => {
+                      if (r.userIds?.some((id) => id.toString() === currentUserId?.toString())) {
+                        userExistingReactions.push(r.emoji);
+                      }
+                    });
+
+                    if (userExistingReactions.includes(emoji)) {
+                      // Clicked the same emoji, so remove it (toggle off)
                       chatSocket?.removeReaction(msgId, emoji);
                     } else {
+                      // Clicked a new emoji: remove previous reactions first to enforce 1 reaction at a time
+                      userExistingReactions.forEach((existingEmoji) => {
+                        chatSocket?.removeReaction(msgId, existingEmoji);
+                      });
+                      // Then add the new reaction
                       chatSocket?.addReaction(msgId, emoji);
                     }
                   }}

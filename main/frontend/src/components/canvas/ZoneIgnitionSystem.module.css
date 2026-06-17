@@ -328,3 +328,46 @@
   color: var(--color-text-primary);
   box-shadow: 0 0 20px rgba(255, 110, 199, 0.4);
 }
+
+@media (max-width: 768px) {
+  .overlay {
+    align-items: flex-end;
+  }
+  .container {
+    width: 100%;
+    max-width: 100%;
+    height: 100dvh;
+    border-radius: 0;
+  }
+  .body {
+    grid-template-columns: 1fr;
+  }
+  .body[data-step="1"] .leftPanel { display: flex; }
+  .body[data-step="1"] .centerPanel { display: none; }
+  .body[data-step="1"] .rightPanel { display: none; }
+
+  .body[data-step="2"] .leftPanel { display: none; }
+  .body[data-step="2"] .centerPanel { display: none; }
+  .body[data-step="2"] .rightPanel { display: flex; }
+
+  .body[data-step="3"] .leftPanel { display: none; }
+  .body[data-step="3"] .centerPanel { display: flex; }
+  .body[data-step="3"] .rightPanel { display: none; }
+
+  .panel {
+    padding: 16px;
+  }
+  .orbWrapper {
+    height: 180px;
+    width: 180px;
+  }
+  .footer {
+    padding: 14px 16px;
+  }
+  .stepProgress {
+    gap: 12px;
+  }
+  .stepNodeLabel {
+    display: none; /* Hide step text labels on small screens to save space */
+  }
+}

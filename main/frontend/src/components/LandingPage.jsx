@@ -14,7 +14,13 @@ function CosmicCursor() {
   const ring    = useRef({ x: -100, y: -100 });
   const hovRef  = useRef(false);
 
+  // Don't render on touch devices (mobile/tablet)
+  const isTouchDevice = typeof window !== 'undefined' &&
+    (window.matchMedia('(hover: none)').matches || 'ontouchstart' in window);
+
   useEffect(() => {
+    if (isTouchDevice) return;
+
     // Direct DOM transform — fastest possible, bypasses React re-renders
     const move = (e) => {
       pos.current.x = e.clientX;
@@ -64,7 +70,9 @@ function CosmicCursor() {
       document.removeEventListener('mouseout',   onLeave, true);
       cancelAnimationFrame(raf);
     };
-  }, []);
+  }, [isTouchDevice]);
+
+  if (isTouchDevice) return null;
 
   return createPortal(
     <>

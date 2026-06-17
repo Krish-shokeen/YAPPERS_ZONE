@@ -80,3 +80,35 @@
   color: #060810;
   border-color: var(--color-accent-primary);
 }
+
+@media (max-width: 640px) {
+  .navBar {
+    top: 8px;
+    height: auto;
+    flex-direction: column;
+    padding: 10px 12px;
+    gap: 8px;
+    border-radius: 16px;
+    width: 92%;
+    max-width: 92%;
+  }
+  .searchWrapper {
+    width: 100%;
+  }
+  .filtersWrapper {
+    width: 100%;
+    justify-content: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+    gap: 6px;
+  }
+  .filtersWrapper::-webkit-scrollbar {
+    display: none;
+  }
+  .filterTag {
+    white-space: nowrap;
+    padding: 4px 10px;
+    font-size: 10px;
+  }
+}

@@ -6,7 +6,9 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 /* ── Custom cursor ─────────────────────────────────────────────────────────── */
-* { cursor: none !important; }
+@media (hover: hover) and (pointer: fine) {
+  body:has(.cursor-dot) * { cursor: none !important; }
+}
 
 .cursor-dot {
   position: fixed;
