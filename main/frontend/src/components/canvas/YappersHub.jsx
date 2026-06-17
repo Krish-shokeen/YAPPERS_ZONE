@@ -286,7 +286,28 @@ export default function YappersHub({ chatJwt, chatSocket, currentUserId }) {
         });
       }
 
-      // 4. Output final positions
+      // 4. Boundary clamping: keep DM nodes within the visible canvas bounds
+      const nodeRadius = 55; // 50px radius + 5px margin
+      zones.forEach((zone) => {
+        const s = stateRef.current[zone.id];
+        if (!s || zone.type !== 'dm') return;
+
+        // Clamp X coordinate
+        if (s.position.x < nodeRadius) {
+          s.position.x = nodeRadius;
+        } else if (s.position.x > W - nodeRadius) {
+          s.position.x = W - nodeRadius;
+        }
+
+        // Clamp Y coordinate
+        if (s.position.y < nodeRadius) {
+          s.position.y = nodeRadius;
+        } else if (s.position.y > H - nodeRadius) {
+          s.position.y = H - nodeRadius;
+        }
+      });
+
+      // 5. Output final positions
       zones.forEach((zone) => {
         const s = stateRef.current[zone.id];
         if (!s) return;
